@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="tong（虚构练习角色）头像">
+  <defs>
+    <clipPath id="clip-tong"><circle cx="64" cy="64" r="64"/></clipPath>
+  </defs>
+  <g clip-path="url(#clip-tong)">
+    <rect width="128" height="128" fill="#f5efe4"/>
+    <path d="M0 128 L0 102 Q64 80 128 102 L128 128 Z" fill="#66706a"/>
+    <path d="M56 108 L72 108 L64 98 Z" fill="#f5efe4"/>
+    <rect x="56" y="84" width="16" height="22" fill="#e8c9a8"/>
+    <circle cx="64" cy="66" r="21" fill="#e8c9a8"/>
+    <circle cx="43" cy="66" r="6" fill="#e8c9a8"/>
+    <circle cx="85" cy="66" r="6" fill="#e8c9a8"/>
+    <path d="M24 72 A40 40 0 0 1 104 72 Z" fill="#4a3226"/>
+    <rect x="20" y="64" width="9" height="28" rx="4.5" fill="#4a3226"/>
+    <rect x="99" y="64" width="9" height="28" rx="4.5" fill="#4a3226"/>
+  </g>
+</svg>

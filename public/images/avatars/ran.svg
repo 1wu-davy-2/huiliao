@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="ran（虚构练习角色）头像">
+  <defs>
+    <clipPath id="clip-ran"><circle cx="64" cy="64" r="64"/></clipPath>
+  </defs>
+  <g clip-path="url(#clip-ran)">
+    <rect width="128" height="128" fill="#f7efdc"/>
+    <path d="M0 128 L0 102 Q64 80 128 102 L128 128 Z" fill="#b78324"/>
+    <path d="M56 108 L72 108 L64 98 Z" fill="#f7efdc"/>
+    <rect x="56" y="84" width="16" height="22" fill="#e8c9a8"/>
+    <circle cx="64" cy="66" r="21" fill="#e8c9a8"/>
+    <circle cx="43" cy="66" r="6" fill="#e8c9a8"/>
+    <circle cx="85" cy="66" r="6" fill="#e8c9a8"/>
+    <path d="M24 80 A40 40 0 0 1 104 80 L104 78 L24 78 Z" fill="#202522"/>
+    <rect x="22" y="66" width="8" height="22" rx="4" fill="#202522"/>
+    <rect x="98" y="66" width="8" height="22" rx="4" fill="#202522"/>
+  </g>
+</svg>
