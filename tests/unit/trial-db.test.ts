@@ -110,25 +110,43 @@ describe('trialDb', () => {
     expect(list.length).toBeLessThanOrEqual(20)
   })
 
-  it('单条超过 2 MB 拒绝存储', async () => {
+  // 2 MB 单条上限是纵深防御：schema 层已把 messages 限到 60 条 × 8000 字符
+  // （≈480 KB），正常输入触不到它。所以这里分两条断言：
+  //  1) schema 允许的最大记录确实能存进去（上限不会误伤合法数据）
+  //  2) 真正超限的记录被拒绝，且一个字节都没落库
+  it('schema 允许的最大记录仍可存储（2 MB 上限不误伤合法输入）', async () => {
+    const maximal: TrialSessionRecord['messages'] = []
+    for (let i = 0; i < 60; i++) {
+      maximal.push({
+        role: i % 2 === 0 ? 'user' : 'assistant',
+        content: 'x'.repeat(8000),
+        createdAt: new Date().toISOString(),
+      })
+    }
+    const result = await saveTrialSession(makeRecord('maximal', { messages: maximal }))
+    expect(result.saved).toBe(true)
+    expect(result.error).toBeUndefined()
+    expect(await getTrialSession('maximal')).toBeDefined()
+  })
+
+  it('单条超过 2 MB 拒绝存储且不写入数据库', async () => {
+    // 直接构造超过 2 MB 的记录以触发 byteSize 守卫
     const huge = makeRecord('huge', {
       messages: [{
         role: 'user',
-        content: 'x'.repeat(8000),
+        content: 'x'.repeat(2 * 1024 * 1024 + 1024),
         createdAt: new Date().toISOString(),
       }],
     })
-    // 用额外的数据来膨胀它...实际上 8000 字符只有一个 message，远不到 2MB。
-    // 我们要用很多 messages 来逼近 2MB
-    const many: TrialSessionRecord['messages'] = []
-    for (let i = 0; i < 270; i++) {
-      many.push({ role: 'user', content: 'x'.repeat(8000), createdAt: new Date().toISOString() })
-    }
-    // 270 × 8000 ≈ 2.16 MB，但 schema 限制 max 60 messages
-    // 所以这条测试改为验证 schema 的 60 条上限已生效
-    // 实际上 2MB 单条在 schema 层面很难触发，这里测试 60 条上限即可
-    expect(many.length).toBe(270)
-    // Schema-level: 60 max messages already tested in ai-trials.test.ts
+
+    const result = await saveTrialSession(huge)
+    expect(result.saved).toBe(false)
+    expect(result.error).toContain('2 MB')
+    expect(result.evictedIds).toEqual([])
+
+    // 关键：拒绝必须是「完全没写」，不能留下半条记录
+    expect(await getTrialSession('huge')).toBeUndefined()
+    expect(await listTrialSessions()).toHaveLength(0)
   })
 
   it('已存记录不含 apiKey', async () => {

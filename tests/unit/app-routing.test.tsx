@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { within } from '@testing-library/react'
@@ -98,7 +98,10 @@ describe('路由与首次设置门禁', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: '确认清除' }))
 
-    expect(window.localStorage.getItem(STORAGE_NAMESPACE)).toBeNull()
+    // clearCorruptStorage 先清 IndexedDB 再清 localStorage，断言需等微任务落地
+    await waitFor(() => {
+      expect(window.localStorage.getItem(STORAGE_NAMESPACE)).toBeNull()
+    })
     expect(screen.getByRole('heading', { name: '首次设置' })).toBeInTheDocument()
   })
 

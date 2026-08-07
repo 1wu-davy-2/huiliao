@@ -5,7 +5,6 @@ import {
   addReflection,
   addTrialSummary,
   clearStoredData,
-  clearTrialSummaries as persistClearTrialSummaries,
   loadStoredDataWithStatus,
   reconcileTrialSummaries,
   removeReflection,
@@ -15,6 +14,7 @@ import {
   SCHEMA_VERSION,
   type StorageRecovery,
 } from '@/lib/storage/storage'
+import { clearTrialSessions } from '@/lib/ai/trialDb'
 import { DEFAULT_SETTINGS } from '@/lib/settings/defaults'
 
 interface AppDataContextValue {
@@ -27,7 +27,7 @@ interface AppDataContextValue {
   clearAll: () => Promise<void>
   resetSettings: () => void
   storageRecovery: StorageRecovery | null
-  clearCorruptStorage: () => void
+  clearCorruptStorage: () => Promise<void>
   saveTrialSummary: (summary: TrialSummary) => void
   removeTrialSummary: (id: string) => void
   reconcileSummaries: (dbIds: string[]) => void
@@ -70,7 +70,10 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const handleClearAll = useCallback(async () => {
-    // IndexedDB 清理通过 trialDb.clearTrialSessions 在 Settings 页调用
+    // 记录优先：先清 IndexedDB 完整对话，成功后再清 localStorage 信封。
+    // IndexedDB 失败时向上抛出，由调用方显示错误；localStorage 保持原样以便重试，
+    // 不声称清除成功。
+    await clearTrialSessions()
     clearStoredData()
     setStorageRecovery(null)
     setData({
@@ -93,7 +96,9 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     )
   }, [])
 
-  const handleClearCorruptStorage = useCallback(() => {
+  const handleClearCorruptStorage = useCallback(async () => {
+    // 与全局清除同序：IndexedDB 优先，失败则抛出且不动 localStorage 原值
+    await clearTrialSessions()
     clearStoredData()
     setStorageRecovery(null)
     setData({

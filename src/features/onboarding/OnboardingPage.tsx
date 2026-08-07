@@ -226,7 +226,7 @@ export default function OnboardingPage() {
         </button>
       </div>
       <p className="small muted" style={{ marginTop: 16 }}>
-        设置与进度仅保存在当前站点的浏览器中，不要求注册；训练输入不上传。托管请求元数据和完整说明可在设置页查看。
+        设置与进度仅保存在当前站点的浏览器中，不要求注册；练习输入不上传。AI 试炼场例外，需你在该页单独勾选同意后，才会把输入发往你自己配置的模型服务。托管请求元数据和完整说明可在设置页查看。
       </p>
     </div>
   )

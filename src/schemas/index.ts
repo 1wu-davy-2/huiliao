@@ -1,8 +1,11 @@
 import { z } from 'zod'
 import type { OptionQuality, SkillKey } from '@/types'
+import { contentReviewStatusSchema } from './common'
 import { trialSummarySchema } from './ai-trials'
 
-export const contentReviewStatusSchema = z.enum(['draft', 'reviewed'])
+// 定义已移入 ./common（叶子模块）以打破 index ⇄ ai-trials 的运行时循环依赖。
+// 此处只做再导出，保持 `@/schemas` 的公开 API 不变。
+export { contentReviewStatusSchema }
 
 export const skillKeySchema = z.enum([
   'clarity',

@@ -3,6 +3,7 @@ import type { ApiProtocol, TrialChallenge, TrialDifficulty, TrialMode, TrialEval
 import { createInitialState, trialReducer } from '@/lib/ai/trialReducer'
 import { selectChallenge } from '@/lib/ai/selectChallenge'
 import { sendTurn, requestEvaluation, testConnection } from '@/lib/ai/trialClient'
+import type { EvaluationResponse } from '@/lib/ai/trialClient'
 import { runAllChecks, calculateHardScore } from '@/lib/ai/trialChecks'
 import { saveTrialSession, listTrialSessions, deleteTrialSession, clearTrialSessions, exportTrialSession } from '@/lib/ai/trialDb'
 import { useAppData } from '@/lib/settings/AppDataContext'
@@ -18,7 +19,7 @@ function generateId(): string {
 }
 
 export default function AiTrialPage() {
-  const { saveTrialSummary } = useAppData()
+  const { saveTrialSummary, removeTrialSummary, reconcileSummaries } = useAppData()
   const [view, setView] = useState<ViewPage>('setup')
   const [state, dispatch] = useReducer(trialReducer, null, createInitialState)
 
@@ -69,13 +70,32 @@ export default function AiTrialPage() {
       setConnStatus('请先填写 API Key 和模型 ID')
       return
     }
+    // 同意门禁：测试连接同样会把 API Key 与题目提示词发往目标服务，
+    // 因此必须在勾选确认之后才允许发送，不能早于披露。
+    if (!consent) {
+      setConnStatus('请先勾选确认：测试连接同样会把内容发送到你填写的模型服务')
+      return
+    }
+    // 服务端题目审核门会拒绝任何未审校 challengeId，因此连接测试必须携带
+    // 一道真实的已审校题目，不能用占位串。
+    if (!challenge) {
+      setConnStatus('请先随机选题：连接测试需要一道已审校题目')
+      return
+    }
     setConnStatus('连接中...')
     const target = targetKind === 'preset'
       ? { kind: 'preset' as const, presetId }
       : { kind: 'custom' as const, baseUrl: customUrl }
-    const result = await testConnection(apiKey, protocol, target, model)
+    const result = await testConnection(apiKey, {
+      mode,
+      difficulty,
+      challengeId: challenge.id,
+      protocol,
+      target,
+      model,
+    })
     setConnStatus(result.message)
-  }, [apiKey, model, targetKind, presetId, customUrl, protocol])
+  }, [apiKey, model, consent, challenge, mode, difficulty, targetKind, presetId, customUrl, protocol])
 
   const handleStartChallenge = useCallback(() => {
     if (!challenge || !apiKey || !model || !consent) return
@@ -138,8 +158,10 @@ export default function AiTrialPage() {
         .filter((m) => m.role === 'assistant')
         .map((m) => m.content)
         .join('\n')
-      const checkResults = runAllChecks(challenge.hardChecks, output)
-      const hardScore = calculateHardScore(checkResults)
+      // 本地先算一份，仅用于服务端不可用时的兜底展示
+      const localChecks = runAllChecks(challenge.hardChecks, output)
+      let checkResults: TrialSessionRecord['hardCheckResults'] = localChecks
+      let hardScore = calculateHardScore(localChecks)
       dispatch({ type: 'SET_HARD_SCORE', score: hardScore })
 
       // 调用模型自评
@@ -147,18 +169,33 @@ export default function AiTrialPage() {
         ? { kind: 'preset' as const, presetId }
         : { kind: 'custom' as const, baseUrl: customUrl }
 
-      const evaluation = await requestEvaluation(apiKeyRef.current, {
-        mode,
-        difficulty,
-        challengeId: challenge.id,
-        protocol,
-        target,
-        model,
-        roundLimit,
-        roundsUsed: state.roundsUsed,
-        messages: state.messages.map((m) => ({ role: m.role, content: m.content })),
-      })
+      let envelope: EvaluationResponse | null = null
+      try {
+        envelope = await requestEvaluation(apiKeyRef.current, {
+          mode,
+          difficulty,
+          challengeId: challenge.id,
+          protocol,
+          target,
+          model,
+          roundLimit,
+          roundsUsed: state.roundsUsed,
+          messages: state.messages.map((m) => ({ role: m.role, content: m.content })),
+        })
+      } catch {
+        // 自评失败不阻塞收尾：保留本地硬规则结果并给出不可用状态
+        envelope = null
+      }
 
+      // 服务端按已审校题目重新计算硬规则，具有权威性，覆盖本地结果。
+      // 绝不用浏览器算出的分数替代服务端结论。
+      if (envelope) {
+        checkResults = envelope.hardCheckResults
+        hardScore = envelope.hardScore
+        dispatch({ type: 'SET_HARD_SCORE', score: hardScore })
+      }
+
+      const evaluation = envelope?.evaluation ?? null
       if (evaluation) {
         setEvalResult(evaluation)
       } else {
@@ -201,7 +238,13 @@ export default function AiTrialPage() {
         evaluation,
       }
 
-      await saveTrialSession(sessionRecord)
+      // 顺序：先写 IndexedDB 完整记录（真相源），再更新 localStorage 摘要索引
+      const saveResult = await saveTrialSession(sessionRecord)
+      if (!saveResult.saved) {
+        setErrorMsg(saveResult.error ?? '对话保存失败，本次记录未写入本地历史。')
+        return
+      }
+
       const summary: TrialSummary = {
         id: sessionRecord.id,
         challengeId: sessionRecord.challengeId,
@@ -215,8 +258,17 @@ export default function AiTrialPage() {
         selfScore: sessionRecord.selfScore,
         completedAt: sessionRecord.completedAt,
       }
-      saveTrialSummary(summary)
-      // evictedIds 中的记录已从 IndexedDB 移除
+
+      try {
+        // 配额淘汰掉的记录已从 IndexedDB 移除，对应摘要必须同步删除，否则留下孤儿索引
+        for (const evictedId of saveResult.evictedIds) {
+          removeTrialSummary(evictedId)
+        }
+        saveTrialSummary(summary)
+      } catch {
+        // 完整对话已保存，仅索引写入失败：保留对话，下次加载历史时 reconcile 重建
+        setErrorMsg('对话已保存，但历史索引更新失败。下次打开试炼历史会自动重建索引。')
+      }
     }
 
     doEvaluate()
@@ -225,8 +277,10 @@ export default function AiTrialPage() {
   const loadHistory = useCallback(async () => {
     const sessions = await listTrialSessions()
     setHistorySessions(sessions)
+    // 以 IndexedDB 为真相源重建摘要索引，清掉保存/删除失败留下的孤儿摘要
+    reconcileSummaries(sessions.map((s) => s.id))
     setView('history')
-  }, [])
+  }, [reconcileSummaries])
 
   if (pool.length === 0 && view === 'setup') {
     return (
@@ -251,8 +305,8 @@ export default function AiTrialPage() {
 
           {/* 模式 & 难度 */}
           <div className="ai-field-group">
-            <label className="ai-label">模式</label>
-            <div className="ai-segmented">
+            <span className="ai-label" id="ai-mode-label">模式</span>
+            <div className="ai-segmented" role="group" aria-labelledby="ai-mode-label">
               {(['communication', 'promptcraft'] as const).map((m) => (
                 <button key={m} className={`ai-seg-btn ${mode === m ? 'active' : ''}`} onClick={() => setMode(m)}>
                   {m === 'communication' ? '沟通试炼' : 'Prompt 工程试炼'}
@@ -262,8 +316,8 @@ export default function AiTrialPage() {
           </div>
 
           <div className="ai-field-group">
-            <label className="ai-label">难度</label>
-            <div className="ai-segmented">
+            <span className="ai-label" id="ai-difficulty-label">难度</span>
+            <div className="ai-segmented" role="group" aria-labelledby="ai-difficulty-label">
               {(['simple', 'normal', 'hard'] as const).map((d) => (
                 <button key={d} className={`ai-seg-btn ${difficulty === d ? 'active' : ''}`} onClick={() => setDifficulty(d)}>
                   {{ simple: '简单', normal: '一般', hard: '困难' }[d]}
@@ -274,8 +328,8 @@ export default function AiTrialPage() {
 
           {/* 协议 */}
           <div className="ai-field-group">
-            <label className="ai-label">协议</label>
-            <select className="ai-select" value={protocol} onChange={(e) => setProtocol(e.target.value as ApiProtocol)}>
+            <label className="ai-label" htmlFor="ai-protocol">协议</label>
+            <select id="ai-protocol" className="ai-select" value={protocol} onChange={(e) => setProtocol(e.target.value as ApiProtocol)}>
               <option value="openai-compatible">OpenAI-compatible</option>
               <option value="anthropic">Anthropic</option>
               <option value="gemini">Gemini</option>
@@ -284,8 +338,8 @@ export default function AiTrialPage() {
 
           {/* 连接目标 */}
           <div className="ai-field-group">
-            <label className="ai-label">连接目标</label>
-            <div className="ai-segmented">
+            <span className="ai-label" id="ai-target-label">连接目标</span>
+            <div className="ai-segmented" role="group" aria-labelledby="ai-target-label">
               <button className={`ai-seg-btn ${targetKind === 'preset' ? 'active' : ''}`} onClick={() => setTargetKind('preset')}>官方预设</button>
               <button className={`ai-seg-btn ${targetKind === 'custom' ? 'active' : ''}`} onClick={() => setTargetKind('custom')}>自定义地址</button>
             </div>
@@ -293,8 +347,8 @@ export default function AiTrialPage() {
 
           {targetKind === 'preset' ? (
             <div className="ai-field-group">
-              <label className="ai-label">预设服务</label>
-              <select className="ai-select" value={presetId} onChange={(e) => setPresetId(e.target.value)}>
+              <label className="ai-label" htmlFor="ai-preset">预设服务</label>
+              <select id="ai-preset" className="ai-select" value={presetId} onChange={(e) => setPresetId(e.target.value)}>
                 <option value="openai">api.openai.com</option>
                 <option value="anthropic">api.anthropic.com</option>
                 <option value="gemini">generativelanguage.googleapis.com</option>
@@ -302,28 +356,28 @@ export default function AiTrialPage() {
             </div>
           ) : (
             <div className="ai-field-group">
-              <label className="ai-label">Base URL (HTTPS)</label>
-              <input className="ai-input" type="url" placeholder="https://your-proxy.example.com/v1" value={customUrl} onChange={(e) => setCustomUrl(e.target.value)} />
+              <label className="ai-label" htmlFor="ai-base-url">Base URL (HTTPS)</label>
+              <input id="ai-base-url" className="ai-input" type="url" placeholder="https://your-proxy.example.com/v1" value={customUrl} onChange={(e) => setCustomUrl(e.target.value)} />
             </div>
           )}
 
           {/* 模型 ID */}
           <div className="ai-field-group">
-            <label className="ai-label">模型 ID</label>
-            <input className="ai-input" type="text" placeholder="gpt-4o-mini / claude-haiku-4-5 / gemini-2.0-flash" value={model} onChange={(e) => setModel(e.target.value)} />
+            <label className="ai-label" htmlFor="ai-model">模型 ID</label>
+            <input id="ai-model" className="ai-input" type="text" placeholder="gpt-4o-mini / claude-haiku-4-5 / gemini-2.0-flash" value={model} onChange={(e) => setModel(e.target.value)} />
           </div>
 
           {/* API Key */}
           <div className="ai-field-group">
-            <label className="ai-label">API Key</label>
-            <input className="ai-input" type="password" placeholder="sk-... / xai-... / AIza..." value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
+            <label className="ai-label" htmlFor="ai-api-key">API Key</label>
+            <input id="ai-api-key" className="ai-input" type="password" placeholder="sk-... / xai-... / AIza..." value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
             <p className="ai-hint">只在本次页面内存中使用，不会保存；浏览器扩展、开发者工具和中转服务仍可能看到它。</p>
           </div>
 
           {/* 最大轮数 */}
           <div className="ai-field-group">
-            <label className="ai-label">最大轮数 ({roundLimit})</label>
-            <input className="ai-range" type="range" min={5} max={30} value={roundLimit} onChange={(e) => setRoundLimit(Number(e.target.value))} />
+            <label className="ai-label" htmlFor="ai-round-limit">最大轮数 ({roundLimit})</label>
+            <input id="ai-round-limit" className="ai-range" type="range" min={5} max={30} value={roundLimit} onChange={(e) => setRoundLimit(Number(e.target.value))} />
           </div>
 
           {/* 随机选题 */}
@@ -377,6 +431,8 @@ export default function AiTrialPage() {
           sessions={historySessions}
           onBack={() => setView('setup')}
           onRefresh={() => loadHistory()}
+          onSummaryRemoved={removeTrialSummary}
+          onSummariesCleared={() => reconcileSummaries([])}
         />
       )}
     </main>
@@ -515,18 +571,40 @@ function HistoryView({
   sessions,
   onBack,
   onRefresh,
+  onSummaryRemoved,
+  onSummariesCleared,
 }: {
   sessions: TrialSessionRecord[]
   onBack: () => void
   onRefresh: () => void
+  onSummaryRemoved: (id: string) => void
+  onSummariesCleared: () => void
 }) {
+  const [historyError, setHistoryError] = useState<string | null>(null)
+
+  // 删除顺序与保存一致：先删 IndexedDB 完整记录，再删 localStorage 摘要。
+  // IndexedDB 失败时不动摘要，也不谎报成功。
   const handleDelete = async (id: string) => {
-    await deleteTrialSession(id)
+    setHistoryError(null)
+    try {
+      await deleteTrialSession(id)
+    } catch {
+      setHistoryError('删除失败，本地记录未变更。')
+      return
+    }
+    onSummaryRemoved(id)
     onRefresh()
   }
 
   const handleClearAll = async () => {
-    await clearTrialSessions()
+    setHistoryError(null)
+    try {
+      await clearTrialSessions()
+    } catch {
+      setHistoryError('清除失败，本地记录未变更。')
+      return
+    }
+    onSummariesCleared()
     onRefresh()
   }
 
@@ -535,6 +613,9 @@ function HistoryView({
       <button className="btn btn-ghost" onClick={onBack}>← 返回设置</button>
       <h2>试炼历史</h2>
       <p className="ai-hint">完整对话只保存在当前浏览器 IndexedDB，最近 20 次或 25 MB，达到上限自动清理最旧记录。</p>
+      {historyError && (
+        <p className="ai-error" role="alert">{historyError}</p>
+      )}
 
       {sessions.length === 0 ? (
         <p className="muted">暂无历史记录</p>

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { AppDataProvider } from '@/lib/settings/AppDataContext'
@@ -63,7 +63,10 @@ describe('设置页', () => {
     // 再次点击并确认
     await user.click(screen.getByRole('button', { name: /清除数据/ }))
     await user.click(screen.getByRole('button', { name: '确认清除' }))
-    expect(window.localStorage.getItem(STORAGE_NAMESPACE)).toBeNull()
+    // clearAll 先 await clearTrialSessions() 再清 localStorage，断言需等微任务落地
+    await waitFor(() => {
+      expect(window.localStorage.getItem(STORAGE_NAMESPACE)).toBeNull()
+    })
   })
 
   it('减少动态效果开关写入设置', async () => {

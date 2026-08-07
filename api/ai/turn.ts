@@ -1,105 +1,96 @@
 /**
- * POST /api/ai/turn — 发送一轮对话到用户配置的模型。
+ * POST /api/ai/turn — 一轮模型对话。
  *
- * Vercel Node Function。不接受 GET 以外的请求。
+ * 这不是通用模型中转接口：
+ *  - challengeId 必须命中「已审校」题库，且与声明的 mode/difficulty 一致
+ *  - 系统提示词一律由服务端按题目生成，浏览器只能发 user/assistant 消息
+ *  - 官方预设必须与协议匹配（防止把 A 厂密钥发到 B 厂主机）
+ *  - 自定义地址经 DNS 解析 + 公网 unicast 校验 + 地址钉定
+ *
+ * 不记录请求体、响应文本、提示词或凭据。
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { turnRequestSchema, readApiKey, HEADER_API_KEY } from '../_lib/contracts'
 import {
-  turnRequestSchema,
-  PRESET_HOSTS,
-  HEADER_API_KEY,
-  type ApiErrorCode,
-} from '../_lib/contracts'
-import { validateBaseUrl } from '../_lib/urlPolicy'
+  bodyTooLarge,
+  fetchSiteAllowed,
+  jsonError,
+  originAllowed,
+  resolveTarget,
+  setJsonHeaders,
+  statusForCode,
+} from '../_lib/http'
+import {
+  buildSystemPrompt,
+  challengeMatches,
+  getReviewedChallenge,
+  hasReviewedPool,
+} from '../_lib/challenges'
 import { dispatchProvider } from '../_lib/providers'
+import { errorCodeOf } from '../_lib/errors'
 
-function jsonError(res: VercelResponse, status: number, code: ApiErrorCode) {
-  return res.status(status).json({ error: code })
-}
+const MAX_OUTPUT_TOKENS = 1200
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  res.setHeader('Content-Type', 'application/json')
-  res.setHeader('Cache-Control', 'no-store')
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
+  setJsonHeaders(res)
 
+  // 方法先于 Origin：诊断用 GET 仍返回 JSON 405
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST')
-    return res.status(405).json({ error: 'Method Not Allowed' })
+    return jsonError(res, 405, 'METHOD_NOT_ALLOWED')
+  }
+  if (bodyTooLarge(req)) {
+    return jsonError(res, 413, 'INVALID_REQUEST')
+  }
+  if (!originAllowed(req) || !fetchSiteAllowed(req)) {
+    return jsonError(res, 403, 'FORBIDDEN_ORIGIN')
   }
 
-  // 解析请求体
-  const parseResult = turnRequestSchema.safeParse(req.body)
-  if (!parseResult.success) {
+  const parsed = turnRequestSchema.safeParse(req.body)
+  if (!parsed.success) {
     return jsonError(res, 400, 'INVALID_REQUEST')
   }
+  const { mode, difficulty, challengeId, protocol, target, model, messages } = parsed.data
 
-  const { protocol, target, model, messages, challengeId } = parseResult.data
-
-  // 解析 API Key
-  const apiKey = req.headers[HEADER_API_KEY]
-  if (!apiKey || typeof apiKey !== 'string' || apiKey.length > 4096) {
-    return jsonError(res, 401, 'UPSTREAM_AUTH')
-  }
-  if (/[\x00-\x1f\x7f]/.test(apiKey)) {
-    return jsonError(res, 400, 'INVALID_REQUEST')
+  const key = readApiKey(req.headers[HEADER_API_KEY])
+  if (!key.ok) {
+    return jsonError(res, key.code === 'UPSTREAM_AUTH' ? 401 : 400, key.code)
   }
 
-  // 解析上游目标
-  let origin: string
-  if (target.kind === 'preset') {
-    origin = PRESET_HOSTS[target.presetId]
-    if (!origin) return jsonError(res, 400, 'INVALID_REQUEST')
-  } else {
-    const validated = validateBaseUrl(target.baseUrl)
-    if (!validated.ok) return jsonError(res, 400, 'INVALID_UPSTREAM_URL')
-    origin = validated.origin
+  // 审核门：题池为空时功能整体不可用
+  if (!hasReviewedPool()) {
+    return jsonError(res, 400, 'UNKNOWN_CHALLENGE')
+  }
+  const challenge = getReviewedChallenge(challengeId)
+  if (!challenge || !challengeMatches(challenge, mode, difficulty)) {
+    return jsonError(res, 400, 'UNKNOWN_CHALLENGE')
   }
 
-  // 服务器端 prompt
-  const systemPrompt = buildSystemPrompt(parseResult.data.mode)
+  const pinned = await resolveTarget(target, req)
+  if (!pinned.ok) {
+    return jsonError(res, 400, 'INVALID_UPSTREAM_URL')
+  }
 
   try {
     const result = await dispatchProvider({
       protocol,
-      origin,
-      apiKey,
+      target: pinned,
+      apiKey: key.apiKey,
       model,
-      systemPrompt,
-      messages: messages.map((m) => ({ role: m.role, content: m.content })),
-      maxTokens: 1200,
+      systemPrompt: buildSystemPrompt(challenge),
+      messages,
+      maxTokens: MAX_OUTPUT_TOKENS,
+      isOfficialOpenAiPreset: target.kind === 'preset' && target.presetId === 'openai',
     })
 
-    // 检查 API Key 回显
-    if (result.text.includes(apiKey)) {
-      return jsonError(res, 502, 'UPSTREAM_SECRET_ECHO')
-    }
-
-    return res.status(200).json({
+    res.status(200).json({
       text: result.text,
       finishReason: result.finishReason,
       usage: result.usage,
     })
   } catch (err: unknown) {
-    const code = (err as { code?: string })?.code
-    const statusMap: Record<string, number> = {
-      UPSTREAM_AUTH: 502,
-      UPSTREAM_RATE_LIMIT: 502,
-      UPSTREAM_TIMEOUT: 504,
-      UPSTREAM_BAD_RESPONSE: 502,
-      UPSTREAM_UNAVAILABLE: 502,
-      UPSTREAM_SECRET_ECHO: 502,
-      INVALID_UPSTREAM_URL: 502,
-      UNSUPPORTED_PROTOCOL: 400,
-      INVALID_REQUEST: 400,
-    }
-    const status = statusMap[code as string] || 500
-    return jsonError(res, status, (code as ApiErrorCode) || 'UPSTREAM_UNAVAILABLE')
+    const { status, code } = statusForCode(errorCodeOf(err))
+    jsonError(res, status, code)
   }
-}
-
-function buildSystemPrompt(mode: string): string {
-  if (mode === 'promptcraft') {
-    return '你是一个帮助用户练习 Prompt 工程的 AI 助手。严格按照用户提供的 Prompt 要求行事，不做额外推测或扩展。'
-  }
-  return '你是一个帮助成年人练习尊重沟通的模拟对话伙伴。你的角色是一个真实的人——有界限、有情绪、可以拒绝。请以自然的中文对话回应。如果对方越界或不尊重，你可以表达不适、设定边界或终止对话。'
 }

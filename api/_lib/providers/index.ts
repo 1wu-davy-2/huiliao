@@ -1,28 +1,42 @@
-import type { NormalizedResponse, ApiErrorCode } from '../contracts'
+import type { ApiProtocol } from '../../../src/types'
+import type { NormalizedResponse } from '../contracts'
+import { fail } from '../errors'
 import { callAnthropic } from './anthropic'
 import { callGemini } from './gemini'
 import { callOpenAiCompatible } from './openaiCompatible'
+import type { ProviderCall } from './types'
 
-export interface ProviderRequest {
-  protocol: 'openai-compatible' | 'anthropic' | 'gemini'
-  origin: string
-  apiKey: string
-  model: string
-  systemPrompt: string
-  messages: Array<{ role: 'user' | 'assistant'; content: string }>
-  maxTokens: number
+export type { ProviderCall }
+
+export interface DispatchCall extends ProviderCall {
+  protocol: ApiProtocol
 }
 
-export async function dispatchProvider(req: ProviderRequest): Promise<NormalizedResponse> {
-  switch (req.protocol) {
+/**
+ * 协议分发 + 凭据回显防护。
+ *
+ * 上游若把请求中的完整凭据回显进正文，一律丢弃该响应，不返回给浏览器。
+ */
+export async function dispatchProvider(call: DispatchCall): Promise<NormalizedResponse> {
+  const result = await invoke(call)
+
+  if (call.apiKey && result.text.includes(call.apiKey)) {
+    fail('UPSTREAM_SECRET_ECHO')
+  }
+
+  return result
+}
+
+function invoke(call: DispatchCall): Promise<NormalizedResponse> {
+  switch (call.protocol) {
     case 'openai-compatible':
-      return callOpenAiCompatible(req.origin, req.apiKey, req.model, req.systemPrompt, req.messages, req.maxTokens)
+      return callOpenAiCompatible(call)
     case 'anthropic':
-      return callAnthropic(req.origin, req.apiKey, req.model, req.systemPrompt, req.messages, req.maxTokens)
+      return callAnthropic(call)
     case 'gemini':
-      return callGemini(req.origin, req.apiKey, req.model, req.systemPrompt, req.messages, req.maxTokens)
+      return callGemini(call)
     default:
-      throw Object.assign(new Error('不支持的协议'), { code: 'UNSUPPORTED_PROTOCOL' as ApiErrorCode })
+      return fail('UNSUPPORTED_PROTOCOL')
   }
 }
 

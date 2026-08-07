@@ -17,6 +17,8 @@ import { Modal } from '@/components/ui/Modal'
 function StorageRecoveryPage() {
   const { storageRecovery, clearCorruptStorage } = useAppData()
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [clearing, setClearing] = useState(false)
+  const [clearError, setClearError] = useState<string | null>(null)
 
   if (!storageRecovery) return null
 
@@ -70,12 +72,33 @@ function StorageRecoveryPage() {
 
       <Modal open={confirmOpen} title="确认清除无法读取的数据" onClose={() => setConfirmOpen(false)}>
         <p>清除后，当前站点下的原始本地数据将无法由本应用恢复。已下载的备份文件不会被删除。</p>
+        {clearError !== null && (
+          <p className="form-error" role="alert">
+            {clearError}
+          </p>
+        )}
         <div className="row mt-24" style={{ justifyContent: 'flex-end' }}>
           <button type="button" className="btn btn-ghost" onClick={() => setConfirmOpen(false)}>
             取消
           </button>
-          <button type="button" className="btn btn-danger" onClick={clearCorruptStorage}>
-            确认清除
+          <button
+            type="button"
+            className="btn btn-danger"
+            disabled={clearing}
+            onClick={async () => {
+              setClearError(null)
+              setClearing(true)
+              try {
+                await clearCorruptStorage()
+              } catch {
+                // 两个存储都未确认清空时不谎报成功，保持确认框可见供重试
+                setClearError('清除未完成：本地对话记录无法删除，数据未改动。请重试。')
+              } finally {
+                setClearing(false)
+              }
+            }}
+          >
+            {clearing ? '清除中…' : '确认清除'}
           </button>
         </div>
       </Modal>

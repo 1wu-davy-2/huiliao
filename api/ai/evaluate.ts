@@ -1,121 +1,146 @@
 /**
- * POST /api/ai/evaluate — 调用同一模型对完成试炼进行自评。
+ * POST /api/ai/evaluate — 模型自评（额外一次计费请求）。
+ *
+ * 服务端重新加载已审校题目的验收条件并重算确定性检查；
+ * 绝不信任调用方传入的 rubric、系统提示词或分数。
+ *
+ * 自评 JSON 非法、字段缺失或分数越界一律返回 evaluation: null，不做区间夹取。
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { z } from 'zod'
+import { evaluateRequestSchema, readApiKey, HEADER_API_KEY } from '../_lib/contracts'
 import {
-  evaluateRequestSchema,
-  PRESET_HOSTS,
-  HEADER_API_KEY,
-  type ApiErrorCode,
-} from '../_lib/contracts'
-import { validateBaseUrl } from '../_lib/urlPolicy'
+  bodyTooLarge,
+  fetchSiteAllowed,
+  jsonError,
+  originAllowed,
+  resolveTarget,
+  setJsonHeaders,
+  statusForCode,
+} from '../_lib/http'
+import {
+  buildEvaluationPrompt,
+  challengeMatches,
+  EVALUATION_SYSTEM_PROMPT,
+  getReviewedChallenge,
+  hasReviewedPool,
+} from '../_lib/challenges'
 import { dispatchProvider } from '../_lib/providers'
+import { errorCodeOf } from '../_lib/errors'
+import { calculateHardScore, runAllChecks } from '../../src/lib/ai/trialChecks'
 
-function jsonError(res: VercelResponse, status: number, code: ApiErrorCode) {
-  return res.status(status).json({ error: code })
+/** 自评输出预算低于对话轮（计划要求 ≤800）。 */
+const MAX_EVAL_TOKENS = 800
+const MAX_EXPLANATION = 500
+const MAX_LIST_ITEMS = 5
+
+/** 严格自评形状：分数必须是 0–100 整数，越界即整体作废。 */
+const selfEvaluationSchema = z.object({
+  score: z.number().int().min(0).max(100),
+  strengths: z.array(z.string().min(1)).min(1),
+  weaknesses: z.array(z.string().min(1)),
+  nextAction: z.string().min(1),
+})
+
+function parseSelfEvaluation(raw: string): z.infer<typeof selfEvaluationSchema> | null {
+  const cleaned = raw.replace(/^\s*```(?:json)?/i, '').replace(/```\s*$/, '').trim()
+  let json: unknown
+  try {
+    json = JSON.parse(cleaned)
+  } catch {
+    return null
+  }
+  const parsed = selfEvaluationSchema.safeParse(json)
+  return parsed.success ? parsed.data : null
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  res.setHeader('Content-Type', 'application/json')
-  res.setHeader('Cache-Control', 'no-store')
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
+  setJsonHeaders(res)
 
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST')
-    return res.status(405).json({ error: 'Method Not Allowed' })
+    return jsonError(res, 405, 'METHOD_NOT_ALLOWED')
+  }
+  if (bodyTooLarge(req)) {
+    return jsonError(res, 413, 'INVALID_REQUEST')
+  }
+  if (!originAllowed(req) || !fetchSiteAllowed(req)) {
+    return jsonError(res, 403, 'FORBIDDEN_ORIGIN')
   }
 
-  const parseResult = evaluateRequestSchema.safeParse(req.body)
-  if (!parseResult.success) {
+  const parsed = evaluateRequestSchema.safeParse(req.body)
+  if (!parsed.success) {
     return jsonError(res, 400, 'INVALID_REQUEST')
   }
+  const { mode, difficulty, challengeId, protocol, target, model, messages } = parsed.data
 
-  const { protocol, target, model, messages } = parseResult.data
-
-  const apiKey = req.headers[HEADER_API_KEY]
-  if (!apiKey || typeof apiKey !== 'string' || apiKey.length > 4096) {
-    return jsonError(res, 401, 'UPSTREAM_AUTH')
+  const key = readApiKey(req.headers[HEADER_API_KEY])
+  if (!key.ok) {
+    return jsonError(res, key.code === 'UPSTREAM_AUTH' ? 401 : 400, key.code)
   }
 
-  let origin: string
-  if (target.kind === 'preset') {
-    origin = PRESET_HOSTS[target.presetId]
-    if (!origin) return jsonError(res, 400, 'INVALID_REQUEST')
-  } else {
-    const validated = validateBaseUrl(target.baseUrl)
-    if (!validated.ok) return jsonError(res, 400, 'INVALID_UPSTREAM_URL')
-    origin = validated.origin
+  if (!hasReviewedPool()) {
+    return jsonError(res, 400, 'UNKNOWN_CHALLENGE')
   }
+  const challenge = getReviewedChallenge(challengeId)
+  if (!challenge || !challengeMatches(challenge, mode, difficulty)) {
+    return jsonError(res, 400, 'UNKNOWN_CHALLENGE')
+  }
+
+  const pinned = await resolveTarget(target, req)
+  if (!pinned.ok) {
+    return jsonError(res, 400, 'INVALID_UPSTREAM_URL')
+  }
+
+  // 服务端复算硬规则：
+  //  - promptcraft 检查模型最后一次输出是否符合题目格式要求
+  //  - communication 检查用户自己的表达（safeCommunication 等）
+  const checkTarget =
+    challenge.mode === 'promptcraft'
+      ? [...messages].reverse().find((m) => m.role === 'assistant')?.content ?? ''
+      : messages.filter((m) => m.role === 'user').map((m) => m.content).join('\n')
+
+  const hardCheckResults = runAllChecks(challenge.hardChecks, checkTarget)
+  const hardScore = calculateHardScore(hardCheckResults)
 
   const transcript = messages
-    .map((m) => `${m.role === 'user' ? '用户' : '模型'}: ${m.content}`)
+    .map((m) => `${m.role === 'user' ? '用户' : '对方/模型'}: ${m.content}`)
     .join('\n\n')
-
-  const evalPrompt = `你是一位严格但公正的沟通教练。请根据以下对话记录，对用户的沟通表现进行评分。
-
-评分标准（0-100）：
-- 清晰度：表达是否清晰易懂
-- 真诚度：是否以真实感受而非技巧驱动
-- 倾听：是否回应了对方实际表达的内容
-- 分寸：消息密度、索取程度是否适当
-- 边界：是否尊重对方的拒绝和界线
-
-对话记录：
-${transcript}
-
-请以严格的 JSON 格式回复（不要包含 markdown 代码块标记）：
-{
-  "score": <0-100 整数>,
-  "strengths": ["做得好的地方", ...],
-  "weaknesses": ["可以改进的地方", ...],
-  "nextAction": "下一步建议"
-}`
 
   try {
     const result = await dispatchProvider({
       protocol,
-      origin,
-      apiKey,
+      target: pinned,
+      apiKey: key.apiKey,
       model,
-      systemPrompt: '你是一个严格但公正的沟通教练。请严格按照 JSON 格式输出评估结果，不要包含任何额外文字或解释。',
-      messages: [{ role: 'user', content: evalPrompt }],
-      maxTokens: 800,
+      systemPrompt: EVALUATION_SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: buildEvaluationPrompt(challenge, transcript) }],
+      maxTokens: MAX_EVAL_TOKENS,
+      isOfficialOpenAiPreset: target.kind === 'preset' && target.presetId === 'openai',
     })
 
-    if (result.text.includes(apiKey)) {
-      return jsonError(res, 502, 'UPSTREAM_SECRET_ECHO')
-    }
+    const selfEval = parseSelfEvaluation(result.text)
 
-    // 解析自评 JSON
-    let evaluation = null
-    try {
-      const cleaned = result.text.replace(/```json\s*|\s*```/g, '').trim()
-      const parsed = JSON.parse(cleaned)
-      if (
-        typeof parsed.score === 'number' &&
-        parsed.score >= 0 &&
-        parsed.score <= 100 &&
-        Number.isInteger(parsed.score) &&
-        Array.isArray(parsed.strengths) &&
-        Array.isArray(parsed.weaknesses) &&
-        typeof parsed.nextAction === 'string'
-      ) {
-        evaluation = {
-          score: parsed.score,
-          strengths: parsed.strengths.slice(0, 5).map((s: unknown) => String(s).slice(0, 500)),
-          weaknesses: parsed.weaknesses.slice(0, 5).map((s: unknown) => String(s).slice(0, 500)),
-          nextAction: String(parsed.nextAction).slice(0, 500),
-          disclaimer: 'model-self-evaluation' as const,
-        }
-      }
-    } catch {
-      // 无法解析 → null
-    }
-
-    return res.status(200).json(evaluation)
+    res.status(200).json({
+      hardCheckResults: hardCheckResults.map((r) => ({
+        type: r.type,
+        passed: r.passed,
+        explanation: r.explanation.slice(0, MAX_EXPLANATION),
+      })),
+      hardScore,
+      evaluation: selfEval
+        ? {
+            score: selfEval.score,
+            strengths: selfEval.strengths.slice(0, MAX_LIST_ITEMS).map((s) => s.slice(0, MAX_EXPLANATION)),
+            weaknesses: selfEval.weaknesses.slice(0, MAX_LIST_ITEMS).map((s) => s.slice(0, MAX_EXPLANATION)),
+            nextAction: selfEval.nextAction.slice(0, MAX_EXPLANATION),
+            disclaimer: 'model-self-evaluation' as const,
+          }
+        : null,
+    })
   } catch (err: unknown) {
-    const code = (err as { code?: string })?.code
-    const status = code === 'INVALID_REQUEST' || code === 'UNSUPPORTED_PROTOCOL' ? 400 : 502
-    return jsonError(res, status, (code as ApiErrorCode) || 'UPSTREAM_UNAVAILABLE')
+    const { status, code } = statusForCode(errorCodeOf(err))
+    jsonError(res, status, code)
   }
 }

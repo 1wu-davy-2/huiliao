@@ -1,5 +1,7 @@
 import { z } from 'zod'
-import { contentReviewStatusSchema } from './index'
+// 必须从 ./common 取，不能从 ./index 取：index 会 import 本文件的 trialSummarySchema，
+// 两个值级导入互指会形成运行时循环，导致本文件顶层 const 触发 TDZ 并使整个应用白屏。
+import { contentReviewStatusSchema } from './common'
 
 // ─── 基础枚举 ────────────────────────────────────────────────
 
