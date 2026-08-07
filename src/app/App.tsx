@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Download, ShieldAlert, Trash2 } from 'lucide-react'
+import { Download, RefreshCcw, ShieldAlert, Trash2 } from 'lucide-react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useAppData } from '@/lib/settings/AppDataContext'
 import AppLayout from '@/components/layout/AppLayout'
@@ -14,10 +14,22 @@ import PrivacyPage from '@/features/privacy/PrivacyPage'
 import { Modal } from '@/components/ui/Modal'
 
 function StorageRecoveryPage() {
-  const { storageRecovery, clearCorruptStorage } = useAppData()
+  const {
+    storageRecovery,
+    storageRecoveryError,
+    retryStorage,
+    clearCorruptStorage,
+  } = useAppData()
   const [confirmOpen, setConfirmOpen] = useState(false)
 
   if (!storageRecovery) return null
+
+  const recoveryMessage =
+    storageRecovery.reason === 'unsupported-version'
+      ? '检测到当前版本无法识别的本地数据。为避免降级或丢失字段，应用已暂停进入练习。'
+      : storageRecovery.reason === 'storage-unavailable'
+        ? '浏览器拒绝访问本地存储。应用已暂停读写，请先检查浏览器隐私或站点存储权限。'
+        : '检测到当前站点的本地数据无法读取。为避免覆盖原值，应用已暂停进入练习。'
 
   const downloadRawData = () => {
     if (storageRecovery.rawData === null) return
@@ -37,7 +49,7 @@ function StorageRecoveryPage() {
       <header className="page-head">
         <h1 className="page-title">本地数据需要处理</h1>
         <p className="page-sub" role="alert">
-          检测到当前站点的本地数据无法读取。为避免覆盖原值，应用已暂停进入练习。
+          {recoveryMessage}
         </p>
       </header>
 
@@ -49,21 +61,34 @@ function StorageRecoveryPage() {
               先备份，再决定是否清除
             </h2>
             <p className="muted mt-8">
-              当前只显示空白临时状态，原始值尚未被应用改写。你可以先下载原始文本供排查；恢复页不会把内容上传到任何服务器。
+              {storageRecovery.reason === 'storage-unavailable'
+                ? '请先恢复当前站点的存储权限，再重新读取。应用不会在无法读取原数据时提供清除操作。'
+                : '当前只显示空白临时状态，应用不会用默认值覆盖原数据。若原始文本可读取，你可以先下载备份供排查；恢复页不会把内容上传到任何服务器。'}
             </p>
           </div>
         </div>
+        {storageRecoveryError && (
+          <p className="small mt-16" role="alert">
+            {storageRecoveryError}
+          </p>
+        )}
         <div className="row mt-24">
+          <button type="button" className="btn btn-secondary" onClick={retryStorage}>
+            <RefreshCcw size={16} aria-hidden="true" />
+            重新读取本地数据
+          </button>
           {storageRecovery.rawData !== null && (
             <button type="button" className="btn btn-secondary" onClick={downloadRawData}>
               <Download size={16} aria-hidden="true" />
               下载原始备份
             </button>
           )}
-          <button type="button" className="btn btn-danger" onClick={() => setConfirmOpen(true)}>
-            <Trash2 size={16} aria-hidden="true" />
-            清除并重新开始
-          </button>
+          {storageRecovery.reason !== 'storage-unavailable' && (
+            <button type="button" className="btn btn-danger" onClick={() => setConfirmOpen(true)}>
+              <Trash2 size={16} aria-hidden="true" />
+              清除并重新开始
+            </button>
+          )}
         </div>
       </section>
 
@@ -73,7 +98,14 @@ function StorageRecoveryPage() {
           <button type="button" className="btn btn-ghost" onClick={() => setConfirmOpen(false)}>
             取消
           </button>
-          <button type="button" className="btn btn-danger" onClick={clearCorruptStorage}>
+          <button
+            type="button"
+            className="btn btn-danger"
+            onClick={() => {
+              clearCorruptStorage()
+              setConfirmOpen(false)
+            }}
+          >
             确认清除
           </button>
         </div>

@@ -2,17 +2,17 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Download, RefreshCcw, ShieldAlert, Trash2 } from 'lucide-react'
 import { useAppData } from '@/lib/settings/AppDataContext'
-import { exportStoredData } from '@/lib/storage/storage'
 import { Modal } from '@/components/ui/Modal'
 
 export default function SettingsPage() {
   const navigate = useNavigate()
-  const { data, updateSettings, resetSettings, clearAll } = useAppData()
+  const { data, updateSettings, resetSettings, exportData, clearAll } = useAppData()
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [exported, setExported] = useState(false)
 
   const exportJson = () => {
-    const json = exportStoredData()
+    const json = exportData()
+    if (json === null) return
     const blob = new Blob([json], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -26,7 +26,7 @@ export default function SettingsPage() {
   }
 
   const handleClear = () => {
-    clearAll()
+    if (!clearAll()) return
     setConfirmOpen(false)
     navigate('/onboarding', { replace: true })
   }
@@ -162,8 +162,7 @@ export default function SettingsPage() {
               type="button"
               className="btn btn-secondary"
               onClick={() => {
-                resetSettings()
-                navigate('/onboarding', { replace: true })
+                if (resetSettings()) navigate('/onboarding', { replace: true })
               }}
             >
               <RefreshCcw size={16} aria-hidden="true" />

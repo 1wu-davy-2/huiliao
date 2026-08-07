@@ -68,6 +68,34 @@ describe('场景数据', () => {
     }
   })
 
+  it('隐私教学不承诺绝对删除或无例外保密，并说明可控副本限制', () => {
+    const privacyScenarios = SCENARIOS.filter((s) => s.riskTags.includes('隐私'))
+    const guidance = privacyScenarios
+      .flatMap((scenario) => [
+        scenario.summary,
+        scenario.goal,
+        ...scenario.principles,
+        ...scenario.nodes.flatMap((node) =>
+          node.choices.flatMap((choice) => [
+            choice.response,
+            choice.feelings,
+            choice.keyChange,
+            choice.boundaryNote ?? '',
+          ]),
+        ),
+        ...scenario.endings.flatMap((ending) => [
+          ending.summary,
+          ending.boundarySummary,
+          ending.realTask,
+        ]),
+      ])
+      .join('\n')
+
+    expect(guidance).not.toMatch(/做到真正可撤回|删除所有副本|不会跟任何人说|她只能继续追问/)
+    expect(guidance).toContain('可控')
+    expect(guidance).toContain('备份')
+  })
+
   it('危险选项必须带边界提示', () => {
     for (const scenario of SCENARIOS) {
       for (const node of scenario.nodes) {
@@ -152,7 +180,7 @@ describe('场景数据', () => {
 
   it('s14：用关系承诺交换同意或施压的选项均为 risky 且不达正向结局', () => {
     const s14 = SCENARIOS_DRAFT.find((s) => s.id === 's14')!
-    const coercionPattern = /都这么熟|试一次|别停|总得说|先退/
+    const coercionPattern = /都这么熟|试一次|先问一句为什么|别停|总得透露|不信任我/
     for (const node of s14.nodes) {
       for (const choice of node.choices) {
         if (coercionPattern.test(choice.text)) {
@@ -162,6 +190,15 @@ describe('场景数据', () => {
         }
       }
     }
+  })
+
+  it('s15：绿色信号不能把未确认项带入当前互动', () => {
+    const s15 = SCENARIOS_DRAFT.find((s) => s.id === 's15')!
+    const greenExpansion = s15.nodes
+      .find((n) => n.id === 'n1')!
+      .choices.find((c) => c.id === 'n1b')!
+    expect(greenExpansion.quality).toBe('risky')
+    expect(s15.endings.find((e) => e.id === greenExpansion.goesTo)?.tone).toBe('rejection')
   })
 
   it('draft 场景不在主内容入口中（不进生产 bundle）', () => {

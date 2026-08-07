@@ -11,7 +11,7 @@
 [![React 18](https://img.shields.io/badge/React-18-217a70)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Strict-165e57)](https://www.typescriptlang.org)
 [![Vite 5](https://img.shields.io/badge/Vite-5-747bff)](https://vitejs.dev)
-[![Vitest](https://img.shields.io/badge/Vitest-159%20tests-2f7d4d)](https://vitest.dev)
+[![Vitest](https://img.shields.io/badge/Vitest-166%20tests-2f7d4d)](https://vitest.dev)
 [![Local-First](https://img.shields.io/badge/Data-Local%20First-b78324)]()
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-red)](LICENSE)
 
@@ -150,7 +150,7 @@ Vercel CDN（纯静态）
 | 前端 | React 18 · TypeScript（严格模式）· Vite 5 · React Router 6 |
 | 数据契约 | Zod（场景图、隐私主题、存储 schema 运行时校验） |
 | 样式 | 原生 CSS + 设计令牌（暖白/深墨/青绿/珊瑚/金） |
-| 测试 | Vitest + React Testing Library（159 用例）· Playwright（环境恢复后运行） |
+| 测试 | Vitest + React Testing Library（166 用例）· Playwright（环境恢复后运行） |
 | 部署 | Vercel 纯静态 · Node 22 · `verify:deploy` 构建链 |
 
 ### 本地开发
@@ -158,7 +158,7 @@ Vercel CDN（纯静态）
 ```bash
 npm ci
 npm run dev          # http://localhost:5173
-npm run verify:deploy  # lint + 159 测试 + 构建 + 产物校验（部署前全量）
+npm run verify:deploy  # lint + 166 测试 + 构建 + 产物校验（部署前全量）
 ```
 
 ### Vercel 部署
@@ -179,6 +179,7 @@ npm run verify:deploy  # lint + 159 测试 + 构建 + 产物校验（部署前�
 | [修复与隐私内容扩展实施计划](./docs/REMEDIATION_AND_PRIVACY_EXPANSION_PLAN.md) | 安全分类器、路径校验、隐私体系、绿黄红信号 |
 | [部署架构修改确认计划](./docs/项目部署架构修改确认计划.md) | Vercel 适配、Preview 验收、发布流程 |
 | [验收报告](./docs/ACCEPTANCE_REPORT.md) | 测试、安全回归、路径验证、部署与审校状态 |
+| [2026-08-07 会话工作记录](./docs/SESSION_REPORT_2026-08-07.md) | 本轮请求、实施改动、验证结果、GitHub 状态与剩余事项 |
 | [无 Playwright 测试方案](./docs/TESTING_WITHOUT_PLAYWRIGHT.md) | 环境受限时的验收组合 |
 
 ---

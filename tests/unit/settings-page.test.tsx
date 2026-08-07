@@ -83,13 +83,48 @@ describe('设置页', () => {
   it('重新设置同时撤销成年确认与设置完成状态', async () => {
     const user = userEvent.setup()
     seedData()
+    const beforeReset = JSON.parse(window.localStorage.getItem(STORAGE_NAMESPACE)!)
+    beforeReset.settings.reducedMotion = true
+    beforeReset.progress = [
+      {
+        scenarioId: 's02',
+        completedAt: '2026-08-07T00:00:00.000Z',
+        attempts: 2,
+        retryCount: 1,
+        scores: { clarity: 1, authenticity: 2, listening: 3, pace: 4, boundaries: 5 },
+        boundaryCheckPassed: true,
+      },
+    ]
+    beforeReset.favorites = ['s02']
+    beforeReset.reflections = [
+      {
+        id: 'r-1',
+        scenarioId: 's02',
+        createdAt: '2026-08-07T00:05:00.000Z',
+        text: '保留的复盘',
+      },
+    ]
+    window.localStorage.setItem(STORAGE_NAMESPACE, JSON.stringify(beforeReset))
     renderSettings()
 
     await user.click(screen.getByRole('button', { name: '重新设置' }))
     const stored = JSON.parse(window.localStorage.getItem(STORAGE_NAMESPACE)!) as {
-      settings: { isAdultConfirmed: boolean; onboardingCompleted: boolean }
+      settings: {
+        isAdultConfirmed: boolean
+        onboardingCompleted: boolean
+        selectedChallenges: string[]
+        reducedMotion: boolean
+      }
+      progress: unknown[]
+      favorites: string[]
+      reflections: unknown[]
     }
     expect(stored.settings.isAdultConfirmed).toBe(false)
     expect(stored.settings.onboardingCompleted).toBe(false)
+    expect(stored.settings.selectedChallenges).toEqual([])
+    expect(stored.settings.reducedMotion).toBe(true)
+    expect(stored.progress).toHaveLength(1)
+    expect(stored.favorites).toEqual(['s02'])
+    expect(stored.reflections).toHaveLength(1)
   })
 })

@@ -2,14 +2,13 @@ import { describe, expect, it, beforeEach } from 'vitest'
 import {
   SCHEMA_VERSION,
   STORAGE_NAMESPACE,
+  StorageRecoveryRequiredError,
   addProgressRecord,
   addReflection,
   clearStoredData,
   exportStoredData,
-  loadStoredData,
   loadStoredDataWithStatus,
   removeReflection,
-  saveStoredData,
   toggleFavorite,
   updateSettings,
 } from '@/lib/storage/storage'
@@ -46,13 +45,23 @@ function freshData(): StoredData {
   }
 }
 
+function seedStoredData(data: StoredData): void {
+  window.localStorage.setItem(STORAGE_NAMESPACE, JSON.stringify(data))
+}
+
+function readStoredData(): StoredData {
+  const result = loadStoredDataWithStatus()
+  if (result.recovery) throw new Error('测试数据不可读')
+  return result.data
+}
+
 describe('storage', () => {
   beforeEach(() => {
     window.localStorage.clear()
   })
 
   it('空存储时返回默认值', () => {
-    const data = loadStoredData()
+    const data = readStoredData()
     expect(data.schemaVersion).toBe(SCHEMA_VERSION)
     expect(data.settings.isAdultConfirmed).toBe(false)
     expect(data.progress).toEqual([])
@@ -63,79 +72,118 @@ describe('storage', () => {
   it('损坏的 JSON 安全回退到默认值', () => {
     const raw = '{{{ 不是 JSON'
     window.localStorage.setItem(STORAGE_NAMESPACE, raw)
-    const data = loadStoredData()
-    expect(data.settings.onboardingCompleted).toBe(false)
     const result = loadStoredDataWithStatus()
+    expect(result.data.settings.onboardingCompleted).toBe(false)
     expect(result.recovery?.rawData).toBe(raw)
     expect(window.localStorage.getItem(STORAGE_NAMESPACE)).toBe(raw)
   })
 
-  it('schema 版本不符时迁移保留可用字段', () => {
-    window.localStorage.setItem(
-      STORAGE_NAMESPACE,
-      JSON.stringify({
-        schemaVersion: 999,
-        settings: { isAdultConfirmed: true, selectedChallenges: ['fear'], onboardingCompleted: true, reducedMotion: false },
-        progress: [],
-        favorites: [],
-        reflections: [],
-      }),
+  it('未来 schema 进入只读恢复流程，不被当前版本降级覆盖', () => {
+    const raw = JSON.stringify({
+      schemaVersion: 999,
+      settings: {
+        isAdultConfirmed: true,
+        selectedChallenges: ['fear'],
+        onboardingCompleted: true,
+        reducedMotion: false,
+      },
+      progress: [],
+      favorites: [],
+      reflections: [],
+      futureOnlyField: { mustSurvive: true },
+    })
+    window.localStorage.setItem(STORAGE_NAMESPACE, raw)
+
+    const result = loadStoredDataWithStatus()
+    expect(result.recovery).toEqual({ rawData: raw, reason: 'unsupported-version' })
+    expect(() => updateSettings({ reducedMotion: true })).toThrow(
+      StorageRecoveryRequiredError,
     )
-    const data = loadStoredData()
-    expect(data.schemaVersion).toBe(SCHEMA_VERSION)
-    expect(data.settings.selectedChallenges).toEqual(['fear'])
-    expect(data.settings.onboardingCompleted).toBe(true)
-    expect(data.progress).toEqual([])
+    expect(window.localStorage.getItem(STORAGE_NAMESPACE)).toBe(raw)
+  })
+
+  it('空字符串也是损坏数据，不会被当作空存储', () => {
+    window.localStorage.setItem(STORAGE_NAMESPACE, '')
+    const result = loadStoredDataWithStatus()
+    expect(result.recovery).toEqual({ rawData: '', reason: 'unreadable-data' })
+  })
+
+  it('运行期间数据损坏后，写操作会停止且保留原始值', () => {
+    seedStoredData(freshData())
+    const raw = '{{{ 运行期间损坏'
+    window.localStorage.setItem(STORAGE_NAMESPACE, raw)
+
+    expect(() => toggleFavorite('s02')).toThrow(StorageRecoveryRequiredError)
+    expect(window.localStorage.getItem(STORAGE_NAMESPACE)).toBe(raw)
+  })
+
+  it('存储不可访问时返回恢复状态，清除失败也不会伪装成功', () => {
+    const unavailableStorage = {
+      getItem: () => {
+        throw new DOMException('denied', 'SecurityError')
+      },
+      removeItem: () => {
+        throw new DOMException('denied', 'SecurityError')
+      },
+    } as unknown as Storage
+
+    expect(loadStoredDataWithStatus(unavailableStorage).recovery).toEqual({
+      rawData: null,
+      reason: 'storage-unavailable',
+    })
+    expect(() => clearStoredData(unavailableStorage)).toThrow(
+      StorageRecoveryRequiredError,
+    )
   })
 
   it('写入后可以读回', () => {
-    saveStoredData(freshData())
-    const data = loadStoredData()
+    seedStoredData(freshData())
+    const data = readStoredData()
     expect(data.settings.selectedChallenges).toEqual(['start'])
   })
 
   it('updateSettings 合并字段', () => {
-    saveStoredData(freshData())
+    seedStoredData(freshData())
     const data = updateSettings({ reducedMotion: true })
     expect(data.settings.reducedMotion).toBe(true)
     expect(data.settings.selectedChallenges).toEqual(['start'])
   })
 
   it('addProgressRecord 追加并完整覆盖同场景记录', () => {
-    saveStoredData(freshData())
-    addProgressRecord(SAMPLE_RECORD)
+    seedStoredData(freshData())
+    addProgressRecord({ ...SAMPLE_RECORD, resolvedAfterFeedback: true })
     const updated: ProgressRecord = {
       ...SAMPLE_RECORD,
       completedAt: '2026-08-07T10:00:00.000Z',
       attempts: 6,
       retryCount: 3,
       boundaryCheckPassed: false,
-      resolvedAfterFeedback: true,
     }
     addProgressRecord(updated)
-    const data = loadStoredData()
+    const data = readStoredData()
     expect(data.progress).toHaveLength(1)
     expect(data.progress[0]).toEqual(updated)
+    expect(data.progress[0]).not.toHaveProperty('resolvedAfterFeedback')
   })
 
   it('复盘增删', () => {
-    saveStoredData(freshData())
+    seedStoredData(freshData())
     addReflection(SAMPLE_REFLECTION)
-    expect(loadStoredData().reflections).toHaveLength(1)
+    expect(readStoredData().reflections).toHaveLength(1)
     removeReflection('r-1')
-    expect(loadStoredData().reflections).toHaveLength(0)
+    expect(readStoredData().reflections).toHaveLength(0)
   })
 
   it('收藏切换', () => {
-    saveStoredData(freshData())
+    seedStoredData(freshData())
     toggleFavorite('s02')
-    expect(loadStoredData().favorites).toContain('s02')
+    expect(readStoredData().favorites).toContain('s02')
     toggleFavorite('s02')
-    expect(loadStoredData().favorites).not.toContain('s02')
+    expect(readStoredData().favorites).not.toContain('s02')
   })
 
   it('导出 JSON 包含 schema 版本与导出时间', () => {
-    saveStoredData(freshData())
+    seedStoredData(freshData())
     const exported = JSON.parse(exportStoredData())
     expect(exported.schemaVersion).toBe(SCHEMA_VERSION)
     expect(exported.exportedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
@@ -143,13 +191,13 @@ describe('storage', () => {
   })
 
   it('清除后为空', () => {
-    saveStoredData(freshData())
+    seedStoredData(freshData())
     clearStoredData()
     expect(window.localStorage.getItem(STORAGE_NAMESPACE)).toBeNull()
   })
 
   it('消息实验室草稿不会出现在本地存储', () => {
-    saveStoredData(freshData())
+    seedStoredData(freshData())
     window.localStorage.setItem(STORAGE_NAMESPACE, JSON.stringify(freshData()))
     // 模拟草稿只在页面内存中：不调用任何 storage 写入
     const raw = window.localStorage.getItem(STORAGE_NAMESPACE)!

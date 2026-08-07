@@ -10,8 +10,14 @@ import { DEFAULT_SETTINGS } from '@/lib/settings/defaults'
 export const STORAGE_NAMESPACE = 'huiliao:v1'
 export const SCHEMA_VERSION = 1
 
+export type StorageRecoveryReason =
+  | 'unreadable-data'
+  | 'unsupported-version'
+  | 'storage-unavailable'
+
 export interface StorageRecovery {
   rawData: string | null
+  reason: StorageRecoveryReason
 }
 
 export interface StoredDataLoadResult {
@@ -19,7 +25,17 @@ export interface StoredDataLoadResult {
   recovery: StorageRecovery | null
 }
 
-function createFallbackData(): StoredData {
+export class StorageRecoveryRequiredError extends Error {
+  recovery: StorageRecovery
+
+  constructor(recovery: StorageRecovery) {
+    super('本地数据需要先恢复或清除')
+    this.name = 'StorageRecoveryRequiredError'
+    this.recovery = recovery
+  }
+}
+
+export function createFallbackData(): StoredData {
   return {
     schemaVersion: SCHEMA_VERSION,
     settings: { ...DEFAULT_SETTINGS },
@@ -29,56 +45,84 @@ function createFallbackData(): StoredData {
   }
 }
 
-export function loadStoredDataWithStatus(
-  storage: Storage = window.localStorage,
-): StoredDataLoadResult {
+function resolveStorage(storage?: Storage): Storage {
+  return storage ?? window.localStorage
+}
+
+export function loadStoredDataWithStatus(storage?: Storage): StoredDataLoadResult {
   const fallback = createFallbackData()
-  let raw: string | null = null
+  let target: Storage
+  let raw: string | null
 
   try {
-    raw = storage.getItem(STORAGE_NAMESPACE)
-    if (!raw) return { data: fallback, recovery: null }
-    const parsed = storedDataSchema.parse(JSON.parse(raw))
-    if (parsed.schemaVersion !== SCHEMA_VERSION) {
-      return { data: migrate(parsed), recovery: null }
-    }
-    return { data: parsed, recovery: null }
+    target = resolveStorage(storage)
+    raw = target.getItem(STORAGE_NAMESPACE)
   } catch {
-    return { data: fallback, recovery: { rawData: raw } }
+    return {
+      data: fallback,
+      recovery: { rawData: null, reason: 'storage-unavailable' },
+    }
+  }
+
+  if (raw === null) return { data: fallback, recovery: null }
+
+  try {
+    const decoded: unknown = JSON.parse(raw)
+    if (
+      typeof decoded !== 'object' ||
+      decoded === null ||
+      !Number.isInteger((decoded as { schemaVersion?: unknown }).schemaVersion)
+    ) {
+      throw new Error('缺少有效 schemaVersion')
+    }
+
+    const version = (decoded as { schemaVersion: number }).schemaVersion
+    if (version !== SCHEMA_VERSION) {
+      return {
+        data: fallback,
+        recovery: { rawData: raw, reason: 'unsupported-version' },
+      }
+    }
+
+    return { data: storedDataSchema.parse(decoded), recovery: null }
+  } catch {
+    return {
+      data: fallback,
+      recovery: { rawData: raw, reason: 'unreadable-data' },
+    }
   }
 }
 
-export function loadStoredData(storage: Storage = window.localStorage): StoredData {
-  return loadStoredDataWithStatus(storage).data
+function loadWritableData(storage?: Storage): StoredData {
+  const result = loadStoredDataWithStatus(storage)
+  if (result.recovery) throw new StorageRecoveryRequiredError(result.recovery)
+  return result.data
 }
 
-function migrate(data: StoredData): StoredData {
-  const migrated: StoredData = {
-    schemaVersion: SCHEMA_VERSION,
-    settings: { ...DEFAULT_SETTINGS, ...data.settings },
-    progress: Array.isArray(data.progress) ? data.progress : [],
-    favorites: Array.isArray(data.favorites) ? data.favorites : [],
-    reflections: Array.isArray(data.reflections) ? data.reflections : [],
+function saveStoredData(data: StoredData, storage?: Storage): void {
+  let rawData: string | null = null
+
+  try {
+    const target = resolveStorage(storage)
+    rawData = target.getItem(STORAGE_NAMESPACE)
+    const serialized = JSON.stringify({
+      ...data,
+      schemaVersion: SCHEMA_VERSION,
+    })
+    target.setItem(STORAGE_NAMESPACE, serialized)
+  } catch {
+    throw new StorageRecoveryRequiredError({
+      rawData,
+      reason: 'storage-unavailable',
+    })
   }
-  return migrated
-}
-
-export function saveStoredData(
-  data: StoredData,
-  storage: Storage = window.localStorage,
-): void {
-  const serialized = JSON.stringify({
-    ...data,
-    schemaVersion: SCHEMA_VERSION,
-  })
-  storage.setItem(STORAGE_NAMESPACE, serialized)
 }
 
 export function updateSettings(
   patch: Partial<UserSettings>,
-  storage: Storage = window.localStorage,
+  storage?: Storage,
 ): StoredData {
-  const data = loadStoredData(storage)
+  const data = loadWritableData(storage)
   data.settings = settingsSchema.parse({ ...data.settings, ...patch })
   saveStoredData(data, storage)
   return data
@@ -86,9 +130,9 @@ export function updateSettings(
 
 export function addProgressRecord(
   record: ProgressRecord,
-  storage: Storage = window.localStorage,
+  storage?: Storage,
 ): StoredData {
-  const data = loadStoredData(storage)
+  const data = loadWritableData(storage)
   const parsedRecord = progressRecordSchema.parse(record)
   const existingIndex = data.progress.findIndex((r) => r.scenarioId === record.scenarioId)
   if (existingIndex >= 0) {
@@ -102,9 +146,9 @@ export function addProgressRecord(
 
 export function addReflection(
   reflection: Reflection,
-  storage: Storage = window.localStorage,
+  storage?: Storage,
 ): StoredData {
-  const data = loadStoredData(storage)
+  const data = loadWritableData(storage)
   data.reflections.unshift(reflection)
   saveStoredData(data, storage)
   return data
@@ -112,9 +156,9 @@ export function addReflection(
 
 export function removeReflection(
   id: string,
-  storage: Storage = window.localStorage,
+  storage?: Storage,
 ): StoredData {
-  const data = loadStoredData(storage)
+  const data = loadWritableData(storage)
   data.reflections = data.reflections.filter((r) => r.id !== id)
   saveStoredData(data, storage)
   return data
@@ -122,9 +166,9 @@ export function removeReflection(
 
 export function toggleFavorite(
   scenarioId: string,
-  storage: Storage = window.localStorage,
+  storage?: Storage,
 ): StoredData {
-  const data = loadStoredData(storage)
+  const data = loadWritableData(storage)
   if (data.favorites.includes(scenarioId)) {
     data.favorites = data.favorites.filter((id) => id !== scenarioId)
   } else {
@@ -134,8 +178,8 @@ export function toggleFavorite(
   return data
 }
 
-export function exportStoredData(storage: Storage = window.localStorage): string {
-  const data = loadStoredData(storage)
+export function exportStoredData(storage?: Storage): string {
+  const data = loadWritableData(storage)
   return JSON.stringify(
     {
       schemaVersion: SCHEMA_VERSION,
@@ -147,6 +191,13 @@ export function exportStoredData(storage: Storage = window.localStorage): string
   )
 }
 
-export function clearStoredData(storage: Storage = window.localStorage): void {
-  storage.removeItem(STORAGE_NAMESPACE)
+export function clearStoredData(storage?: Storage): void {
+  try {
+    resolveStorage(storage).removeItem(STORAGE_NAMESPACE)
+  } catch {
+    throw new StorageRecoveryRequiredError({
+      rawData: null,
+      reason: 'storage-unavailable',
+    })
+  }
 }
