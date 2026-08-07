@@ -126,13 +126,14 @@
 
 - 本地 GitHub SSH 认证成功，账户为 `1wu-davy-2`；本文未记录密钥内容。
 - 当前项目配置的远端为 `git@github.com:1wu-davy-2/huiliao.git`，分支为 `main`。
-- 已通过 `git fetch` 确认本地基线与当前 `origin/main` 一致。
+- 已通过 `git fetch` 确认远端未产生分叉，并以普通快进方式把本轮实现提交 `a2bb9fe` 推送到当前项目的 `origin/main`。
+- 推送后再次读取远端引用，本地与远端完整 SHA 均为 `a2bb9fe0a2ef9ea194cdc64ab48ba5a6171f5dd5`。
 - 查询 `git@github.com:1wu-davy-2/cangku1.git` 时，GitHub 返回仓库不存在或当前密钥无权限。
-- 在获得 `cangku1` 的准确 `owner/repository` 地址或创建授权前，不应把本轮提交强推或误推到其他仓库。
+- 本轮将“GitHub cangku1”按“GitHub 仓库里”理解并使用项目现有远端；如果它实际指字面仓库名 `cangku1`，仍需另行创建仓库或提供准确的 `owner/repository` 和访问权限。
 
 ## 发布前剩余事项
 
-1. 提供可访问的 `cangku1` GitHub 仓库地址，或明确批准使用当前 `1wu-davy-2/huiliao` 远端。
+1. 如果 `cangku1` 是字面仓库名，提供可访问的仓库地址或创建授权；当前项目代码已推送至 `1wu-davy-2/huiliao`。
 2. 在真实浏览器完成 1440×900、768 和 360 三视口及键盘验收。
 3. 恢复 Playwright Chromium 后执行 E2E 和 axe。
 4. 完成 s14/s15 的成年人同意与 BDSM 社群实践专业审校。
