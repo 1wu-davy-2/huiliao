@@ -9,3 +9,4 @@ blob-report/
 npm-debug.log*
 
 .vercel/
+*.tsbuildinfo
