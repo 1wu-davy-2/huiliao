@@ -226,7 +226,7 @@ export default function OnboardingPage() {
         </button>
       </div>
       <p className="small muted" style={{ marginTop: 16 }}>
-        全部数据仅保存在本浏览器，不要求注册，可随时导出或清除。
+        设置与进度仅保存在当前站点的浏览器中，不要求注册；训练输入不上传。托管请求元数据和完整说明可在设置页查看。
       </p>
     </div>
   )

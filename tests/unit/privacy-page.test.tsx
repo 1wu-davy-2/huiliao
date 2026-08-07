@@ -27,7 +27,10 @@ describe('隐私与边界页', () => {
     const tabs = screen.getAllByRole('tab')
     expect(tabs).toHaveLength(4)
     expect(tabs[0]).toHaveAttribute('aria-selected', 'true')
-    expect(screen.getByRole('tabpanel')).toHaveTextContent(/这台设备上保存了什么/)
+    expect(screen.getByRole('tabpanel')).toHaveTextContent(/如何区分页面内存/)
+    expect(screen.getByRole('tabpanel')).toHaveTextContent(/页面内存/)
+    expect(screen.getByRole('tabpanel')).toHaveTextContent(/托管平台/)
+    expect(screen.getByRole('tabpanel')).toHaveTextContent(/下载原始备份/)
 
     tabs[0].focus()
     await user.keyboard('{ArrowRight}')
@@ -39,6 +42,9 @@ describe('隐私与边界页', () => {
     await user.keyboard('{ArrowRight}')
     expect(tabs[3]).toHaveFocus()
     expect(screen.getByRole('tabpanel')).toHaveTextContent(/成年人自愿情趣与/)
+    expect(screen.getByRole('tabpanel')).toHaveTextContent(/设备与云备份/)
+    expect(screen.getByRole('tabpanel')).toHaveTextContent(/事后关心和复盘/)
+    expect(screen.getByRole('tabpanel')).toHaveTextContent(/安全词只有在双方事先约定/)
   })
 
   it('每个主题包含原则、示例与停止条件', () => {
