@@ -2,13 +2,15 @@ import type {
   ProgressRecord,
   Reflection,
   StoredData,
+  TrialSummary,
   UserSettings,
 } from '@/types'
 import { progressRecordSchema, storedDataSchema, settingsSchema } from '@/schemas'
+import { trialSummarySchema } from '@/schemas/ai-trials'
 import { DEFAULT_SETTINGS } from '@/lib/settings/defaults'
 
 export const STORAGE_NAMESPACE = 'huiliao:v1'
-export const SCHEMA_VERSION = 1
+export const SCHEMA_VERSION = 2
 
 export interface StorageRecovery {
   rawData: string | null
@@ -26,6 +28,21 @@ function createFallbackData(): StoredData {
     progress: [],
     favorites: [],
     reflections: [],
+    trialSummaries: [],
+  }
+}
+
+/**
+ * v1→v2 迁移：v1 无 trialSummaries 字段。
+ * 未来版本或未知版本（如 999）进入 raw-backup recovery。
+ */
+function getRawVersion(raw: string): number | null {
+  try {
+    const envelope = JSON.parse(raw)
+    if (typeof envelope?.schemaVersion === 'number') return envelope.schemaVersion
+    return null
+  } catch {
+    return null
   }
 }
 
@@ -38,11 +55,32 @@ export function loadStoredDataWithStatus(
   try {
     raw = storage.getItem(STORAGE_NAMESPACE)
     if (!raw) return { data: fallback, recovery: null }
-    const parsed = storedDataSchema.parse(JSON.parse(raw))
-    if (parsed.schemaVersion !== SCHEMA_VERSION) {
-      return { data: migrate(parsed), recovery: null }
+
+    const rawVersion = getRawVersion(raw)
+    if (rawVersion === 1) {
+      // v1→v2 迁移
+      const v1 = JSON.parse(raw)
+      const migrated: StoredData = {
+        schemaVersion: SCHEMA_VERSION,
+        settings: { ...DEFAULT_SETTINGS, ...v1.settings },
+        progress: Array.isArray(v1.progress) ? v1.progress : [],
+        favorites: Array.isArray(v1.favorites) ? v1.favorites : [],
+        reflections: Array.isArray(v1.reflections) ? v1.reflections : [],
+        trialSummaries: [],
+      }
+      return { data: migrated, recovery: null }
     }
-    return { data: parsed, recovery: null }
+
+    // 尝试用当前 schema 解析（兼容不同版本的合法数据）
+    const parsed = storedDataSchema.safeParse(JSON.parse(raw))
+    if (parsed.success) {
+      return {
+        data: { ...parsed.data, schemaVersion: SCHEMA_VERSION, trialSummaries: parsed.data.trialSummaries ?? [] },
+        recovery: null,
+      }
+    }
+    // 无法解析 → recovery
+    throw new Error('schema mismatch')
   } catch {
     return { data: fallback, recovery: { rawData: raw } }
   }
@@ -52,15 +90,56 @@ export function loadStoredData(storage: Storage = window.localStorage): StoredDa
   return loadStoredDataWithStatus(storage).data
 }
 
-function migrate(data: StoredData): StoredData {
-  const migrated: StoredData = {
-    schemaVersion: SCHEMA_VERSION,
-    settings: { ...DEFAULT_SETTINGS, ...data.settings },
-    progress: Array.isArray(data.progress) ? data.progress : [],
-    favorites: Array.isArray(data.favorites) ? data.favorites : [],
-    reflections: Array.isArray(data.reflections) ? data.reflections : [],
+export function addTrialSummary(
+  summary: TrialSummary,
+  storage: Storage = window.localStorage,
+): StoredData {
+  const data = loadStoredData(storage)
+  const summaries = data.trialSummaries ?? []
+  const parsed = trialSummarySchema.parse(summary)
+  // 替换同 ID 或插入
+  const idx = summaries.findIndex((s) => s.id === parsed.id)
+  if (idx >= 0) {
+    summaries[idx] = parsed
+  } else {
+    summaries.unshift(parsed)
   }
-  return migrated
+  // 最多 20 条
+  const trimmed = summaries.slice(0, 20)
+  data.trialSummaries = trimmed
+  saveStoredData(data, storage)
+  return data
+}
+
+export function removeTrialSummary(
+  id: string,
+  storage: Storage = window.localStorage,
+): StoredData {
+  const data = loadStoredData(storage)
+  data.trialSummaries = (data.trialSummaries ?? []).filter((s) => s.id !== id)
+  saveStoredData(data, storage)
+  return data
+}
+
+export function clearTrialSummaries(storage: Storage = window.localStorage): StoredData {
+  const data = loadStoredData(storage)
+  data.trialSummaries = []
+  saveStoredData(data, storage)
+  return data
+}
+
+/**
+ * 根据 IndexedDB 中的实际记录重建 localStorage 摘要列表。
+ * 在 localStorage 写入失败后，下次加载历史时调用。
+ */
+export function reconcileTrialSummaries(
+  dbIds: string[],
+  storage: Storage = window.localStorage,
+): StoredData {
+  const data = loadStoredData(storage)
+  data.trialSummaries = (data.trialSummaries ?? []).filter((s) => dbIds.includes(s.id))
+  saveStoredData(data, storage)
+  return data
 }
 
 export function saveStoredData(

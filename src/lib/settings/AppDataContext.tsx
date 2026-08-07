@@ -1,13 +1,18 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import type { ProgressRecord, Reflection, StoredData, UserSettings } from '@/types'
+import type { ProgressRecord, Reflection, StoredData, TrialSummary, UserSettings } from '@/types'
 import {
   addProgressRecord,
   addReflection,
+  addTrialSummary,
   clearStoredData,
+  clearTrialSummaries as persistClearTrialSummaries,
   loadStoredDataWithStatus,
+  reconcileTrialSummaries,
   removeReflection,
+  removeTrialSummary,
   toggleFavorite as persistFavorite,
   updateSettings,
+  SCHEMA_VERSION,
   type StorageRecovery,
 } from '@/lib/storage/storage'
 import { DEFAULT_SETTINGS } from '@/lib/settings/defaults'
@@ -19,10 +24,13 @@ interface AppDataContextValue {
   saveReflection: (reflection: Reflection) => void
   deleteReflection: (id: string) => void
   toggleFavorite: (scenarioId: string) => void
-  clearAll: () => void
+  clearAll: () => Promise<void>
   resetSettings: () => void
   storageRecovery: StorageRecovery | null
   clearCorruptStorage: () => void
+  saveTrialSummary: (summary: TrialSummary) => void
+  removeTrialSummary: (id: string) => void
+  reconcileSummaries: (dbIds: string[]) => void
 }
 
 const AppDataContext = createContext<AppDataContextValue | null>(null)
@@ -61,15 +69,17 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     setData(persistFavorite(scenarioId))
   }, [])
 
-  const handleClearAll = useCallback(() => {
+  const handleClearAll = useCallback(async () => {
+    // IndexedDB 清理通过 trialDb.clearTrialSessions 在 Settings 页调用
     clearStoredData()
     setStorageRecovery(null)
     setData({
-      schemaVersion: 1,
+      schemaVersion: SCHEMA_VERSION,
       settings: { ...DEFAULT_SETTINGS },
       progress: [],
       favorites: [],
       reflections: [],
+      trialSummaries: [],
     })
   }, [])
 
@@ -87,12 +97,25 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     clearStoredData()
     setStorageRecovery(null)
     setData({
-      schemaVersion: 1,
+      schemaVersion: SCHEMA_VERSION,
       settings: { ...DEFAULT_SETTINGS },
       progress: [],
       favorites: [],
       reflections: [],
+      trialSummaries: [],
     })
+  }, [])
+
+  const handleSaveTrialSummary = useCallback((summary: TrialSummary) => {
+    setData(addTrialSummary(summary))
+  }, [])
+
+  const handleRemoveTrialSummary = useCallback((id: string) => {
+    setData(removeTrialSummary(id))
+  }, [])
+
+  const handleReconcileSummaries = useCallback((dbIds: string[]) => {
+    setData(reconcileTrialSummaries(dbIds))
   }, [])
 
   const value = useMemo(
@@ -107,6 +130,9 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       resetSettings: handleResetSettings,
       storageRecovery,
       clearCorruptStorage: handleClearCorruptStorage,
+      saveTrialSummary: handleSaveTrialSummary,
+      removeTrialSummary: handleRemoveTrialSummary,
+      reconcileSummaries: handleReconcileSummaries,
     }),
     [
       data,
@@ -119,6 +145,9 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       handleResetSettings,
       storageRecovery,
       handleClearCorruptStorage,
+      handleSaveTrialSummary,
+      handleRemoveTrialSummary,
+      handleReconcileSummaries,
     ],
   )
 

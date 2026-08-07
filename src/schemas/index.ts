@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { OptionQuality, SkillKey } from '@/types'
+import { trialSummarySchema } from './ai-trials'
 
 export const contentReviewStatusSchema = z.enum(['draft', 'reviewed'])
 
@@ -160,6 +161,7 @@ export const storedDataSchema = z.object({
   progress: z.array(progressRecordSchema),
   favorites: z.array(z.string()),
   reflections: z.array(reflectionSchema),
+  trialSummaries: z.array(trialSummarySchema).optional(),
 })
 
 export type ParsedScenario = z.infer<typeof scenarioSchema>
