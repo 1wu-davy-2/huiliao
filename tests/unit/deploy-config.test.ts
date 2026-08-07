@@ -89,4 +89,32 @@ describe('Vercel 部署配置', () => {
   it('主内容入口不含 draft 场景（draft 不进生产 bundle）', () => {
     expect(SCENARIOS.some((s) => s.reviewStatus === 'draft')).toBe(false)
   })
+
+  it('index.html 引用了 favicon.svg 和 favicon.ico', () => {
+    const html = readFileSync(join(ROOT, 'index.html'), 'utf8')
+    expect(html).toContain('/favicon.svg')
+    expect(html).toContain('/favicon.ico')
+  })
+
+  it('public/favicon.ico 包含合法 ICO 魔数', () => {
+    const icoPath = join(ROOT, 'public', 'favicon.ico')
+    expect(existsSync(icoPath)).toBe(true)
+    const buf = readFileSync(icoPath)
+    expect(buf.length).toBeGreaterThanOrEqual(22)
+    expect(buf[0]).toBe(0)
+    expect(buf[1]).toBe(0)
+    expect(buf[2]).toBe(1)
+    expect(buf[3]).toBe(0)
+  })
+
+  it('public/apple-touch-icon.png 为 180×180 PNG', () => {
+    const pngPath = join(ROOT, 'public', 'apple-touch-icon.png')
+    expect(existsSync(pngPath)).toBe(true)
+    const buf = readFileSync(pngPath)
+    expect(buf.length).toBeGreaterThanOrEqual(29)
+    const width = buf.readUInt32BE(16)
+    const height = buf.readUInt32BE(20)
+    expect(width).toBe(180)
+    expect(height).toBe(180)
+  })
 })

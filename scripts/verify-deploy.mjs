@@ -57,7 +57,33 @@ for (const file of [...jsFiles, ...cssFiles]) {
 }
 check(!existsSync(join(DIST, '.env')), 'dist 中出现 .env')
 
-// 4. bundle 不含 draft 场景（按场景内容标记检查；reviewStatus 字段名本身是运行时合法代码）
+// 4. favicon 资源
+const FAVICON_FILES = ['favicon.svg', 'favicon.ico', 'apple-touch-icon.png']
+for (const name of FAVICON_FILES) {
+  const p = join(DIST, name)
+  check(existsSync(p) && statSync(p).size > 0, `dist/${name} 缺失或为空`)
+}
+// 验证 ICO 魔数（前4字节：00 00 01 00）
+const icoPath = join(DIST, 'favicon.ico')
+if (existsSync(icoPath)) {
+  const icoBuf = readFileSync(icoPath)
+  check(icoBuf.length >= 22, 'favicon.ico 大小不足以包含 ICO 头')
+  if (icoBuf.length >= 4) {
+    const magicOk = icoBuf[0] === 0 && icoBuf[1] === 0 && icoBuf[2] === 1 && icoBuf[3] === 0
+    check(magicOk, 'favicon.ico 魔数不正确（应为 ICO 格式）')
+  }
+}
+// 验证 apple-touch-icon.png 为 180×180
+const applePath = join(DIST, 'apple-touch-icon.png')
+if (existsSync(applePath)) {
+  const pngBuf = readFileSync(applePath)
+  check(pngBuf.length >= 29, 'apple-touch-icon.png 大小不足以包含 PNG 头')
+  const width = pngBuf.readUInt32BE(16)
+  const height = pngBuf.readUInt32BE(20)
+  check(width === 180 && height === 180, `apple-touch-icon.png 尺寸应为 180×180，实际为 ${width}×${height}`)
+}
+
+// 5. bundle 不含 draft 场景（按场景内容标记检查；reviewStatus 字段名本身是运行时合法代码）
 const DRAFT_MARKERS = ['成年人自愿情趣的事前边界协商', '绿黄红信号与中途撤回']
 for (const file of jsFiles) {
   const content = readFileSync(join(assetsDir, file), 'utf8')
