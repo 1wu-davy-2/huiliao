@@ -12,6 +12,9 @@ const check = (ok, message) => {
   if (!ok) failures.push(message)
 }
 
+// 0. 许可证
+check(existsSync(join(ROOT, 'LICENSE')), 'LICENSE 文件缺失（AGPL-3.0）')
+
 // 1. 入口与资源
 const indexPath = join(DIST, 'index.html')
 check(existsSync(indexPath), 'dist/index.html 不存在')

@@ -11,8 +11,9 @@
 [![React 18](https://img.shields.io/badge/React-18-217a70)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Strict-165e57)](https://www.typescriptlang.org)
 [![Vite 5](https://img.shields.io/badge/Vite-5-747bff)](https://vitejs.dev)
-[![Vitest](https://img.shields.io/badge/Vitest-158%20tests-2f7d4d)](https://vitest.dev)
+[![Vitest](https://img.shields.io/badge/Vitest-159%20tests-2f7d4d)](https://vitest.dev)
 [![Local-First](https://img.shields.io/badge/Data-Local%20First-b78324)]()
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-red)](LICENSE)
 
 **面向缺少约会沟通经验的成年人，提供尊重、真诚、有边界的关系沟通练习。**
 
@@ -34,6 +35,8 @@
 | **隐私专项** | 影像、拍摄、删除与保密的边界训练 | 把"尊重隐私"变成具体动作 |
 | **绿黄红信号** | 成年人自愿情趣的停止信号体系 | 持续同意、暂停与撤回 |
 | **隐私与边界手册** | 应用数据、聊天身份、影像分享、情趣边界四册 | 知道自己的数据去了哪里 |
+
+另有 `s14`、`s15` 两个成年人情趣边界草稿，已与生产内容隔离，不进入用户可访问的场景和构建产物；只有在外部专业审校通过并将状态改为 `reviewed` 后才可发布。
 
 ---
 
@@ -91,7 +94,7 @@
   ├── 安全规则层     normalize + 意图检测组合：未成年/醉酒/无视停止/隐私侵犯/权力差
   │                  教育性提问不绕过同句执行意图；路径级校验阻止越界路径到达正向结局
   ├── 诊断层         analyzeMessage 纯函数：五维评分、三类结果（ok / caution / blocked）
-  └── 存储层         localStorage（huiliao:v1，带版本迁移）——草稿与自由输入不持久化
+  └── 存储层         localStorage（huiliao:v1，带版本校验与恢复）——草稿与自由输入不持久化
 
 Vercel CDN（纯静态）
   └── vercel.json    SPA rewrite · CSP/安全响应头 · assets 一年 immutable 缓存
@@ -147,7 +150,7 @@ Vercel CDN（纯静态）
 | 前端 | React 18 · TypeScript（严格模式）· Vite 5 · React Router 6 |
 | 数据契约 | Zod（场景图、隐私主题、存储 schema 运行时校验） |
 | 样式 | 原生 CSS + 设计令牌（暖白/深墨/青绿/珊瑚/金） |
-| 测试 | Vitest + React Testing Library（158 用例）· Playwright（环境恢复后运行） |
+| 测试 | Vitest + React Testing Library（159 用例）· Playwright（环境恢复后运行） |
 | 部署 | Vercel 纯静态 · Node 22 · `verify:deploy` 构建链 |
 
 ### 本地开发
@@ -155,7 +158,7 @@ Vercel CDN（纯静态）
 ```bash
 npm ci
 npm run dev          # http://localhost:5173
-npm run verify:deploy  # lint + 158 测试 + 构建 + 产物校验（部署前全量）
+npm run verify:deploy  # lint + 159 测试 + 构建 + 产物校验（部署前全量）
 ```
 
 ### Vercel 部署
@@ -182,7 +185,17 @@ npm run verify:deploy  # lint + 158 测试 + 构建 + 产物校验（部署前�
 
 ## 许可证
 
-许可证尚未确定，将在正式发布前选定并补充本文件。发布前请勿以任何商业用途分发本项目。
+本项目采用 **[GNU Affero General Public License v3.0](LICENSE)（AGPL-3.0）** —— 强 Copyleft 协议。
+
+使用、修改或分发本代码，以及将本代码（或其衍生作品）作为**网络服务**提供给他人使用时，必须：
+
+- 以相同许可（AGPL-3.0）向使用者开放你的完整源码；
+- 保留本项目的版权声明与许可证文本；
+- 明确标注你对代码所做的修改。
+
+任何试图以闭源方式使用本项目（包括内部部署为服务）的行为，均违反本许可证。
+
+> 本许可证不构成法律建议。分发或商用前请自行咨询具备资质的法律专业人士。
 
 ---
 
