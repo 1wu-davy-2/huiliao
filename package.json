@@ -14,7 +14,8 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "e2e": "playwright test",
-    "verify:deploy": "npm run lint && npm run test && npm run build && node scripts/verify-deploy.mjs"
+    "typecheck:api": "tsc -p tsconfig.api.json --noEmit",
+    "verify:deploy": "npm run lint && npm run test && npm run build && npm run typecheck:api && node scripts/verify-deploy.mjs"
   },
   "dependencies": {
     "idb": "^8.0.3",

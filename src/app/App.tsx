@@ -8,6 +8,7 @@ import HomePage from '@/features/home/HomePage'
 import PracticePage from '@/features/practice/PracticePage'
 import ScenarioPage from '@/features/practice/ScenarioPage'
 import MessageLabPage from '@/features/lab/MessageLabPage'
+import AiTrialPage from '@/features/lab/AiTrialPage'
 import ProgressPage from '@/features/progress/ProgressPage'
 import SettingsPage from '@/features/settings/SettingsPage'
 import PrivacyPage from '@/features/privacy/PrivacyPage'
@@ -111,6 +112,7 @@ export default function App() {
         <Route path="/practice" element={<PracticePage />} />
         <Route path="/practice/:id" element={<ScenarioPage />} />
         <Route path="/lab" element={<MessageLabPage />} />
+        <Route path="/lab/ai" element={<AiTrialPage />} />
         <Route path="/progress" element={<ProgressPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />

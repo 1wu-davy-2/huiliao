@@ -117,4 +117,21 @@ describe('Vercel 部署配置', () => {
     expect(width).toBe(180)
     expect(height).toBe(180)
   })
+
+  it('vercel.json 配置了 api/ai functions 且保留 SPA rewrite', () => {
+    const config = readJson('vercel.json') as VercelConfig & {
+      functions?: Record<string, { runtime?: string; maxDuration?: number }>
+    }
+    expect(config.functions).toBeDefined()
+    const fnKey = Object.keys(config.functions!).find((k) => k.startsWith('api/ai/'))
+    expect(fnKey).toBeDefined()
+    expect(config.functions![fnKey!].runtime).toContain('nodejs')
+    // CSP 不包含外部 connect-src
+    const pageHeaders = config.headers?.find((h) => h.source === '/(.*)')?.headers ?? []
+    const csp = pageHeaders.find((h) => h.key === 'Content-Security-Policy')?.value ?? ''
+    expect(csp).toContain("connect-src 'self'")
+    // 保留 catch-all SPA rewrite
+    const catchAll = config.rewrites?.find((r) => r.source === '/(.*)')
+    expect(catchAll).toBeDefined()
+  })
 })

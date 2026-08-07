@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { AlertTriangle, CheckCircle2, EyeOff, FlaskConical, ShieldAlert } from 'lucide-react'
+import LabTabs from './LabTabs'
 import { analyzeMessage } from '@/lib/analysis/analyze'
 import { SkillBars } from '@/components/ui/SkillBars'
 import {
@@ -92,6 +93,7 @@ export default function MessageLabPage() {
 
   return (
     <>
+      <LabTabs />
       <header className="page-head">
         <h1 className="page-title">消息实验室</h1>
         <p className="page-sub">

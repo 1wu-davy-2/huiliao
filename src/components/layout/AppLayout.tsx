@@ -21,6 +21,7 @@ const PAGE_CONTEXT: Record<string, string> = {
   '/': '训练工作台',
   '/practice': '情境库',
   '/lab': '消息实验室',
+  '/lab/ai': 'AI 试炼场',
   '/progress': '能力与复盘',
   '/settings': '设置与隐私',
 }
