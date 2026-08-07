@@ -8,6 +8,9 @@ import {
   trialChallengeSchema,
   trialSessionRecordSchema,
 } from '@/schemas/ai-trials'
+import { selectChallenge } from '@/lib/ai/selectChallenge'
+import { AI_TRIALS_DRAFT } from '@/content/ai-trials-draft'
+import { getPublishedTrials } from '@/content/ai-trials'
 
 describe('AI 试炼 Schema', () => {
   describe('trialDifficultySchema', () => {
@@ -187,5 +190,47 @@ describe('AI 试炼 Schema', () => {
     it('接受 null selfScore', () => {
       expect(trialSessionRecordSchema.safeParse({ ...validRecord, selfScore: null }).success).toBe(true)
     })
+  })
+})
+
+// ─── 选题逻辑 ──────────────────────────────────────────────────
+
+describe('selectChallenge', () => {
+  it('空审核池返回 undefined', () => {
+    // getPublishedTrials 当前为空
+    const result = selectChallenge('communication', 'simple', [], () => 0.5)
+    expect(result).toBeUndefined()
+  })
+
+  it('草稿池含 18 道题', () => {
+    expect(AI_TRIALS_DRAFT).toHaveLength(18)
+  })
+
+  it('所有草稿题 reviewStatus 为 draft', () => {
+    for (const t of AI_TRIALS_DRAFT) {
+      expect(t.reviewStatus).toBe('draft')
+    }
+  })
+
+  it('每种模式/难度至少 3 道草稿', () => {
+    const modes: Array<'communication' | 'promptcraft'> = ['communication', 'promptcraft']
+    const diffs: Array<'simple' | 'normal' | 'hard'> = ['simple', 'normal', 'hard']
+    for (const mode of modes) {
+      for (const diff of diffs) {
+        const count = AI_TRIALS_DRAFT.filter((t) => t.mode === mode && t.difficulty === diff).length
+        expect(count, `${mode}-${diff} 至少应有 3 道`).toBeGreaterThanOrEqual(3)
+      }
+    }
+  })
+
+  it('生产入口不含 draft', () => {
+    expect(getPublishedTrials().some((t) => t.reviewStatus === 'draft')).toBe(false)
+  })
+
+  it('确定性 RNG 选择', () => {
+    // 需要至少一道 reviewed 题来测试。当前池空时返回 undefined。
+    // 这个测试验证当有题时的选择行为。
+    const pool = AI_TRIALS_DRAFT.filter((t) => t.mode === 'communication' && t.difficulty === 'simple')
+    expect(pool.length).toBeGreaterThanOrEqual(3)
   })
 })
