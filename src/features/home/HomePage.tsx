@@ -48,7 +48,7 @@ export default function HomePage() {
       <div>
         <header className="page-head">
           <h1 className="page-title">
-            今天想练点什么？
+            今天练哪一场？
             {challengeLabels.length > 0 && (
               <span
                 className="muted"
@@ -59,7 +59,7 @@ export default function HomePage() {
             )}
           </h1>
           <p className="page-sub">
-            这是一间练习场：只评价你能控制的表达和行为，不评价对方给你的结果。
+            下一步不是取悦对方，而是把话说清楚。这里只评价你能控制的表达和行为。
           </p>
         </header>
 

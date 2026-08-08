@@ -57,7 +57,7 @@ describe('路由与首次设置门禁', () => {
 
   it('完成后访问首页展示工作台而非首次设置', () => {
     renderAt('/', true)
-    expect(screen.getByRole('heading', { name: /今天想练点什么/ })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /今天练哪一场/ })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: '首次设置' })).not.toBeInTheDocument()
   })
 
@@ -118,7 +118,7 @@ describe('路由与首次设置门禁', () => {
     await user.click(within(nav).getByRole('link', { name: '设置' }))
     expect(screen.getByRole('heading', { name: '设置与隐私' })).toBeInTheDocument()
     await user.click(within(nav).getByRole('link', { name: '首页' }))
-    expect(screen.getByRole('heading', { name: /今天想练点什么/ })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /今天练哪一场/ })).toBeInTheDocument()
   })
 
 })

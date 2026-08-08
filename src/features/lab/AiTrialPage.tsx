@@ -2,7 +2,13 @@ import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import type { ApiProtocol, TrialChallenge, TrialDifficulty, TrialMode, TrialEvaluation, TrialSessionRecord, TrialSummary } from '@/types'
 import { createInitialState, trialReducer } from '@/lib/ai/trialReducer'
 import { selectChallenge } from '@/lib/ai/selectChallenge'
-import { sendTurn, requestEvaluation, testConnection } from '@/lib/ai/trialClient'
+import {
+  messageForCode,
+  sendTurn,
+  requestEvaluation,
+  testConnection,
+  TrialRequestError,
+} from '@/lib/ai/trialClient'
 import type { EvaluationResponse } from '@/lib/ai/trialClient'
 import { runAllChecks, calculateHardScore } from '@/lib/ai/trialChecks'
 import { saveTrialSession, listTrialSessions, deleteTrialSession, clearTrialSessions, exportTrialSession } from '@/lib/ai/trialDb'
@@ -152,15 +158,15 @@ export default function AiTrialPage() {
       setErrorMsg(null)
       return true
     } catch (err: unknown) {
-      const e = err as { code?: string; message?: string }
-      if (e.code === 'ABORTED') {
+      if (err instanceof TrialRequestError && err.code === 'ABORTED') {
         // 用户主动取消：清除挂起状态即可，不消耗轮数，也不当作失败提示；
         // 返回 false 让输入框恢复草稿，便于修改后重试
         dispatch({ type: 'CANCEL_REQUEST' })
         setErrorMsg(null)
       } else {
-        dispatch({ type: 'REQUEST_FAILED', requestId, errorCode: e.code || 'NETWORK' })
-        setErrorMsg(e.message || '请求失败')
+        const code = err instanceof TrialRequestError ? err.code : 'NETWORK'
+        dispatch({ type: 'REQUEST_FAILED', requestId, errorCode: code })
+        setErrorMsg(`${messageForCode(code)}本轮失败，未消耗轮数。`)
       }
       return false
     } finally {
@@ -640,6 +646,8 @@ function HistoryView({
   onSummariesCleared: () => void
 }) {
   const [historyError, setHistoryError] = useState<string | null>(null)
+  // 当前展开查看完整对话的会话 id
+  const [openSessionId, setOpenSessionId] = useState<string | null>(null)
 
   // 删除顺序与保存一致：先删 IndexedDB 完整记录，再删 localStorage 摘要。
   // IndexedDB 失败时不动摘要，也不谎报成功。
@@ -688,9 +696,26 @@ function HistoryView({
               </p>
               <p className="muted">{s.roundsUsed} / {s.roundLimit} 轮 · 硬规则 {s.hardScore} 分 · {new Date(s.completedAt).toLocaleString()}</p>
               <div className="row mt-8">
+                <button className="btn btn-ghost btn-sm" onClick={() => setOpenSessionId(openSessionId === s.id ? null : s.id)}>
+                  {openSessionId === s.id ? '收起对话' : '查看对话'}
+                </button>
                 <button className="btn btn-ghost btn-sm" onClick={() => exportTrialSession(s)}>导出</button>
                 <button className="btn btn-ghost btn-sm" onClick={() => handleDelete(s.id)}>删除</button>
               </div>
+              {openSessionId === s.id && (
+                <div className="ai-transcript" aria-label="完整对话">
+                  {s.messages.map((m, i) => (
+                    <div key={i} className={`ai-msg ai-msg-${m.role}`}>
+                      <span className="ai-msg-label">
+                        {m.role === 'user'
+                          ? (s.mode === 'communication' ? '你' : '你的 Prompt')
+                          : (s.mode === 'communication' ? '对方' : '模型输出')}
+                      </span>
+                      <p>{m.content}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
           <button className="btn btn-danger mt-16" onClick={handleClearAll}>清除全部试炼记录</button>

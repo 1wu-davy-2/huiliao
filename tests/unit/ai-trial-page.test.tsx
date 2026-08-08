@@ -286,6 +286,54 @@ describe('AI 试炼场页面 · 试炼交互（取消与轮数）', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
+  it('请求失败显示中文错误与未消耗轮数提示，且可重试', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockRejectedValue(new Error('network down'))
+    renderPage()
+    await startTrial(user)
+    await user.type(screen.getByLabelText('你的回应'), '一句正常的话。')
+    await user.click(screen.getByRole('button', { name: '发送' }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/网络错误。本轮失败，未消耗轮数。/)).toBeInTheDocument()
+      expect(screen.getByText(/第\s*0\s*\/\s*\d+\s*轮/)).toBeInTheDocument()
+    })
+    // 失败后草稿保留，发送按钮可用
+    expect(screen.getByRole('button', { name: '发送' })).toBeEnabled()
+  })
+
+  it('历史记录支持展开查看完整对话', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        text: '这是一句正常的模型回应。',
+        finishReason: 'stop',
+        usage: { inputTokens: 1, outputTokens: 1 },
+      }),
+    } as Response)
+    renderPage()
+    await startTrial(user)
+    await user.type(screen.getByLabelText('你的回应'), '一句话。')
+    await user.click(screen.getByRole('button', { name: '发送' }))
+    await waitFor(() => {
+      expect(screen.getByText(/第\s*1\s*\/\s*\d+\s*轮/)).toBeInTheDocument()
+    })
+    await user.click(screen.getByRole('button', { name: '结束并评估' }))
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: '试炼完成' })).toBeInTheDocument()
+    })
+    await user.click(screen.getByRole('button', { name: '返回设置' }))
+    await user.click(screen.getByRole('button', { name: '查看本地历史' }))
+    await user.click(await screen.findByRole('button', { name: '查看对话' }))
+
+    expect(screen.getByText('一句话。')).toBeInTheDocument()
+    expect(screen.getByText('这是一句正常的模型回应。')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '收起对话' }))
+    expect(screen.queryByText('这是一句正常的模型回应。')).not.toBeInTheDocument()
+  })
+
   it('达到轮数上限后自动进入评估并显示已达到你设定的轮数', async () => {
     const user = userEvent.setup()
     fetchMock.mockResolvedValue({
