@@ -16,7 +16,7 @@
 | --- | --- | --- |
 | `npm ci` | PASS | 416 packages，Node v22.23.2 |
 | ESLint | PASS | 0 error；1 个既有 warning（AppDataContext.tsx Fast Refresh 导出提示） |
-| Vitest | PASS | **26 个测试文件、540 个用例全部通过** |
+| Vitest | PASS | **26 个测试文件、541 个用例全部通过** |
 | Production build | PASS | JS 399.20 KB（gzip 150.22 KB），CSS 27.73 KB（gzip 7.65 KB） |
 | `typecheck:api` | PASS | **exit 0**（urlPolicy 重构已在 `dfc0cc8` 完成；CLAUDE.md 旧"已知错误"已更正） |
 | 部署产物校验 | PASS | 1 JS、1 CSS、8 头像、本地字体 + OFL 许可证、favicon 集；**23 个草稿标记无泄漏** |

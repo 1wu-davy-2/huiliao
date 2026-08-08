@@ -9,7 +9,7 @@ npm ci                  # Install dependencies (Node 22.x required)
 npm run dev             # Vite dev server → http://localhost:5173
 npm run build           # tsc -b && vite build → dist/
 npm run preview         # Preview production build locally
-npm test                # All Vitest unit tests (540 tests / 26 files, 2026-08-08 实测)
+npm test                # All Vitest unit tests (541 tests / 26 files, 2026-08-08 实测)
 npm run test:watch      # Vitest watch mode
 npm run lint            # ESLint (TypeScript + React hooks)
 npm run typecheck:api   # tsc against api/ only (separate project, not in tsc -b)

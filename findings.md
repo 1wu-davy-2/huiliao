@@ -8,7 +8,7 @@
 |------|----------|
 | `npm ci` | PASS（416 packages） |
 | `npm run lint` | PASS，0 error / 1 warning（AppDataContext.tsx Fast Refresh，既有） |
-| `npm test` | PASS，**26 文件 / 540 用例**（26 files passed, 538→540 随本轮新增用例） |
+| `npm test` | PASS，**26 文件 / 541 用例**（26 files passed, 538→540 随本轮新增用例） |
 | `npm run build` | PASS，JS 399.20 KB（gzip 150.22 KB）、CSS 27.73 KB（gzip 7.65 KB） |
 | `npm run typecheck:api` | **PASS（exit 0）** |
 | `npm run verify:deploy` | PASS（1 JS、1 CSS、8 头像、23 个草稿标记无泄漏） |
