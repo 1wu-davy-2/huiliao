@@ -13,7 +13,7 @@ npm test                # All Vitest unit tests (541 tests / 26 files, 2026-08-0
 npm run test:watch      # Vitest watch mode
 npm run lint            # ESLint (TypeScript + React hooks)
 npm run typecheck:api   # tsc against api/ only (separate project, not in tsc -b)
-npm run e2e             # Playwright E2E (auto-starts dev server; reuseExistingServer)
+npm run e2e             # Playwright E2E（2026-08-08 实测：31 passed / 8 因空题池发布门 skipped）
 npm run verify:deploy   # lint → test → build → typecheck:api → verify-deploy.mjs
 ```
 

@@ -6,7 +6,7 @@
 
 ## 当前阶段
 
-阶段 2–6 主体完成（2026-08-08）；剩余阻断项为需要用户/外部资源的事项（见文末）。
+阶段 2–6 本机可执行项完成（2026-08-08）；剩余阻断项为需要用户/外部资源的事项（见文末）。
 
 ## 阶段安排
 
@@ -55,7 +55,11 @@
 
 - [x] verify-deploy 草稿扫描扩展：DRAFT_MARKERS 覆盖 s14–s18 与全部 18 道 AI 题标题（共 23 个）
 - [x] 新增回归守卫测试：新增草稿标题必须同步登记到标记列表
-- [x] 完整链执行：lint（0 error）/ test（540）/ build / typecheck:api / verify:deploy 全部 PASS
+- [x] 完整链执行：lint（0 error）/ test（541）/ build / typecheck:api / verify:deploy 全部 PASS
+- [x] Playwright E2E：**31 passed / 8 skipped**；桌面、平板、移动用例与 axe 扫描通过。8 条完整 AI 流程因已审核题池为空按发布门预期跳过
+- [x] 检查 Playwright 生成的三视口截图：首页、情境库、实验室、场景页无空白、横向溢出或明显布局错位
+- [x] 修复损坏数据清除后的路由断言时序：等待 React 从恢复页完成切换，消除全链运行中的偶发空 DOM
+- [x] 本地生产预览 HTTP 冒烟：9 个路由全部 `200` 且含 `id="root"`，深层 SPA 回退正常
 - [x] 日志脱敏核查：`api/` 零 `console.*` 输出
 - [ ] **NOT RUN** 受保护 Vercel Preview 部署：本机无 Vercel CLI、无登录态，需项目所有者交互式登录（`! npx vercel login`）后 `npx vercel deploy --prebuilt`，再验证 SPA 深层路由与 `/api/ai/*`
 - [ ] **BLOCKED** WAF/速率限制/Preview 保护配置：属 Vercel 项目控制台设置，需部署后由项目所有者配置并实测
@@ -72,14 +76,13 @@
 
 1. Vercel CLI 安装与登录（交互式），部署受保护 Preview 并实测 `/api/ai/*`、深层路由、响应头
 2. WAF / 速率限制 / Preview 保护 / 日志面板配置与实测（Vercel 控制台）
-3. Playwright Chromium 恢复后执行 E2E（当前保持 BLOCKED，按 TESTING_WITHOUT_PLAYWRIGHT.md）
-4. 浏览器人工验收：1440×900 / 768 / 390×844 三视口、键盘、s09–s18 路径
-5. 外部专业审校：s14–s18 与 18 道 AI 题、法律与性健康文案
-6. Vercel AUP / 隐私 / 计划 / 域名 / noindex / 大陆可用性确认
-7. 以上完成后才可考虑 Production 发布
+3. 浏览器人工验收：键盘操作、s09–s18 路径，以及真实已审核 AI 题池开放后的完整流程
+4. 外部专业审校：s14–s18 与 18 道 AI 题、法律与性健康文案
+5. Vercel AUP / 隐私 / 计划 / 域名 / noindex / 大陆可用性确认
+6. 以上完成后才可考虑 Production 发布
 
 ## 交付记录
 
 - 目标分支：`ai-trial-hardening`（基于 `feature/ai-trial-lab`）
-- 本轮提交：`8686a5f`（交互收尾）、`29b304f`（Stitch UI）、`a3b38c5`（部署门禁）
+- 本轮提交：`8686a5f`（交互收尾）、`29b304f`（Stitch UI）、`a3b38c5`（部署门禁）、`8170f0d`（恢复流程测试时序）
 - 基线：worktree 起始 `7978198`；全部命令在 Node v22.23.2 实测

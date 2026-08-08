@@ -157,7 +157,7 @@ Vercel（静态资源 + 同源中转函数）
 | 前端 | React 18 · TypeScript（严格模式）· Vite 5 · React Router 6 |
 | 数据契约 | Zod（场景图、隐私主题、存储 schema 运行时校验） |
 | 样式 | 原生 CSS + 设计令牌（米白/深墨/鼠尾草绿/砖红/金）· 自托管 OFL 字体（Hanken Grotesk / Be Vietnam Pro / Work Sans） |
-| 测试 | Vitest + React Testing Library（541 用例）· Playwright（环境恢复后运行） |
+| 测试 | Vitest + React Testing Library（541 用例）· Playwright（31 通过 / 8 因空题池发布门预期跳过，2026-08-08 实测） |
 | 部署 | Vercel 纯静态 · Node 22 · `verify:deploy` 构建链 |
 
 ### 本地开发

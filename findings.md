@@ -8,7 +8,7 @@
 |------|----------|
 | `npm ci` | PASS（416 packages） |
 | `npm run lint` | PASS，0 error / 1 warning（AppDataContext.tsx Fast Refresh，既有） |
-| `npm test` | PASS，**26 文件 / 541 用例**（26 files passed, 538→540 随本轮新增用例） |
+| `npm test` | PASS，**26 文件 / 541 用例** |
 | `npm run build` | PASS，JS 399.20 KB（gzip 150.22 KB）、CSS 27.73 KB（gzip 7.65 KB） |
 | `npm run typecheck:api` | **PASS（exit 0）** |
 | `npm run verify:deploy` | PASS（1 JS、1 CSS、8 头像、23 个草稿标记无泄漏） |
@@ -26,6 +26,8 @@ README 曾声明 159 用例、CLAUDE.md 曾声明 233 用例且记载 `typecheck
 7. **verify-deploy 草稿扫描原本只覆盖 2 个标题。** s16–s18 与 18 道 AI 候选题标题未在 DRAFT_MARKERS 中；本轮扩展为 23 个标记并新增守卫测试（草稿标题必须同步登记），防止新草稿静默绕过发布门。
 8. **Vercel CLI 不可用。** 本机未安装 vercel CLI、无 `~/.vercel` 登录态，`npx vercel` 下载挂起。Preview 部署需项目所有者交互式登录，本轮如实标记 NOT RUN。
 9. **API 层零日志。** `api/` 无任何 `console.*` 调用，日志脱敏在代码层面天然满足（无内容可泄漏）。
+10. **损坏数据恢复测试存在异步时序抖动（已修正）。** 清除动作先移除 localStorage，React 随后才从恢复页切回路由页；同步查询可能撞到中间空 DOM。本轮改为等待「首次设置」标题实际渲染，随后完整 `verify:deploy` 541/541 通过。
+11. **Playwright Chromium 已恢复。** 完整 E2E 实测 39 条：31 passed / 8 skipped；跳过项均位于 `POOL_EMPTY` 发布门后的完整 AI 流程。桌面、平板、移动视觉检查与 axe 扫描通过，生成截图经人工查看未见明显遮挡、空白或横向溢出。
 
 ### 决策
 
@@ -42,6 +44,6 @@ README 曾声明 159 用例、CLAUDE.md 曾声明 233 用例且记载 `typecheck
 ### 剩余风险/待办
 
 - Vercel Preview 部署与 WAF/速率限制配置需项目所有者执行（见 task_plan.md）。
-- Playwright Chromium 恢复前 E2E 保持 BLOCKED。
+- 8 条完整 AI 流程继续由 `POOL_EMPTY` 跳过；需专业审校题池并由项目所有者批准发布后才能解除，不能为了覆盖率伪造 reviewed 题目。
 - s14–s18 与 18 道 AI 题、法律/性健康文案待外部专业审校。
 - 发布门已自动拦截草稿泄漏；审校通过后须同时更新 `ai-trials.ts` 的 `AI_TRIALS_REVIEWED`、删除 E2E 的 POOL_EMPTY，并将标记从 DRAFT_MARKERS 移除（守卫测试会提示）。
