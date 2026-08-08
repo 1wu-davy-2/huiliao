@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { SCENARIOS } from '@/content'
+import { SCENARIOS_DRAFT } from '@/content/scenarios-draft'
+import { AI_TRIALS_DRAFT } from '@/content/ai-trials-draft'
 
 const ROOT = join(process.cwd())
 
@@ -88,6 +90,21 @@ describe('Vercel 部署配置', () => {
 
   it('主内容入口不含 draft 场景（draft 不进生产 bundle）', () => {
     expect(SCENARIOS.some((s) => s.reviewStatus === 'draft')).toBe(false)
+  })
+
+  it('verify-deploy 的草稿标记覆盖全部 draft 标题（s14–s18 与 18 道 AI 题）', () => {
+    const script = readFileSync(join(ROOT, 'scripts', 'verify-deploy.mjs'), 'utf8')
+    const block = script.match(/const DRAFT_MARKERS = \[([\s\S]*?)\]/)?.[1] ?? ''
+    const markers = [...block.matchAll(/'([^']+)'/g)].map((m) => m[1])
+
+    const draftTitles = [
+      ...SCENARIOS_DRAFT.map((s) => s.title),
+      ...AI_TRIALS_DRAFT.map((t) => t.title),
+    ]
+    expect(draftTitles.length).toBeGreaterThanOrEqual(23) // 5 场景 + 18 题
+    for (const title of draftTitles) {
+      expect(markers, `verify-deploy 缺少草稿标记: ${title}`).toContain(title)
+    }
   })
 
   it('index.html 引用了 favicon.svg 和 favicon.ico', () => {
