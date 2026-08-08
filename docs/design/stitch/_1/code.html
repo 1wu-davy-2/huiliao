@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>会聊 - 首页</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&amp;family=Hanken+Grotesk:wght@400;500;600;700;800&amp;family=Work+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "inverse-primary": "#a1d39c",
+                      "primary-container": "#7faf7b",
+                      "on-secondary-container": "#56656d",
+                      "on-tertiary-container": "#2b3c45",
+                      "surface-bright": "#fcf9f8",
+                      "secondary": "#526168",
+                      "on-primary": "#ffffff",
+                      "primary": "#3c683b",
+                      "tertiary-container": "#94a6b1",
+                      "on-background": "#1c1b1b",
+                      "on-tertiary-fixed-variant": "#384952",
+                      "secondary-fixed-dim": "#b9c9d2",
+                      "outline-variant": "#c2c9bd",
+                      "secondary-fixed": "#d5e5ee",
+                      "on-secondary-fixed": "#0f1d24",
+                      "primary-fixed": "#bdf0b6",
+                      "on-primary-container": "#164219",
+                      "primary-fixed-dim": "#a1d39c",
+                      "outline": "#72796f",
+                      "tertiary-fixed": "#d3e5f1",
+                      "background": "#fcf9f8",
+                      "on-primary-fixed-variant": "#245026",
+                      "surface-container-lowest": "#ffffff",
+                      "on-error-container": "#93000a",
+                      "inverse-surface": "#313030",
+                      "surface-container-high": "#eae7e7",
+                      "on-primary-fixed": "#002205",
+                      "surface-tint": "#3c683b",
+                      "surface-variant": "#e5e2e1",
+                      "on-secondary-fixed-variant": "#3a4950",
+                      "on-secondary": "#ffffff",
+                      "error-container": "#ffdad6",
+                      "on-tertiary": "#ffffff",
+                      "secondary-container": "#d2e2eb",
+                      "inverse-on-surface": "#f3f0ef",
+                      "surface": "#fcf9f8",
+                      "on-surface-variant": "#42493f",
+                      "on-surface": "#1c1b1b",
+                      "surface-container-highest": "#e5e2e1",
+                      "surface-container": "#f0eded",
+                      "tertiary": "#50616b",
+                      "surface-container-low": "#f6f3f2",
+                      "surface-dim": "#dcd9d9",
+                      "error": "#ba1a1a",
+                      "tertiary-fixed-dim": "#b7c9d4",
+                      "on-tertiary-fixed": "#0c1e26",
+                      "on-error": "#ffffff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "gutter": "32px",
+                      "side_info_width": "320px",
+                      "nav_width": "240px",
+                      "container_max_width": "1440px",
+                      "unit": "8px",
+                      "section_margin": "64px"
+              },
+              "fontFamily": {
+                      "label-md": [
+                              "Work Sans"
+                      ],
+                      "body-md": [
+                              "Be Vietnam Pro"
+                      ],
+                      "body-lg": [
+                              "Be Vietnam Pro"
+                      ],
+                      "headline-lg": [
+                              "Hanken Grotesk"
+                      ],
+                      "display-lg": [
+                              "Hanken Grotesk"
+                      ],
+                      "headline-md": [
+                              "Hanken Grotesk"
+                      ]
+              },
+              "fontSize": {
+                      "label-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "1",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "1.3",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "fontWeight": "500"
+                              }
+                      ]
+              }
+            },
+          }
+        }
+      </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        .radar-chart-container {
+            position: relative;
+            width: 240px;
+            height: 240px;
+            margin: 0 auto;
+        }
+
+        .radar-axis {
+            stroke: #e5e2e1;
+            stroke-width: 1;
+        }
+
+        .radar-web {
+            stroke: #e5e2e1;
+            stroke-width: 1;
+            fill: none;
+        }
+
+        .radar-area {
+            fill: rgba(127, 175, 123, 0.1);
+            stroke: #7faf7b;
+            stroke-width: 1.5;
+        }
+
+        .radar-point {
+            fill: #fcf9f8;
+            stroke: #7faf7b;
+            stroke-width: 1.5;
+        }
+
+        .radar-label {
+            font-family: 'Work Sans', sans-serif;
+            font-size: 12px;
+            fill: #526168;
+            text-anchor: middle;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background antialiased flex">
+<!-- SideNavBar -->
+<nav class="h-full w-nav_width fixed left-0 top-0 border-r border-outline-variant bg-background flex flex-col py-gutter px-6 z-20">
+<div class="mb-12">
+<h1 class="font-headline-md text-headline-md text-primary">会聊</h1>
+<p class="font-label-md text-label-md text-secondary mt-2 opacity-70">Restrained Growth</p>
+</div>
+<button class="w-full bg-primary text-on-primary font-body-md text-body-md py-3 rounded hover:bg-primary-container transition-colors mb-8 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">add</span>
+            开始新对话
+        </button>
+<ul class="flex flex-col gap-2 flex-grow">
+<li>
+<a class="flex items-center gap-4 py-3 px-4 text-primary font-bold border-r-2 border-primary bg-surface-container-low transition-colors scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-body-md text-body-md">首页</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-4 py-3 px-4 text-secondary hover:text-primary hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">exercise</span>
+<span class="font-body-md text-body-md">训练中心</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-4 py-3 px-4 text-secondary hover:text-primary hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-md text-body-md">设置</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-4 py-3 px-4 text-secondary hover:text-primary hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">insights</span>
+<span class="font-body-md text-body-md">进度统计</span>
+</a>
+</li>
+</ul>
+<div class="mt-auto pt-4 border-t border-outline-variant">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest overflow-hidden">
+<img alt="用户头像" class="w-full h-full object-cover" data-alt="A minimalist, abstract portrait icon suitable for a mature user profile, composed of simple geometric shapes in muted sage greens and warm off-whites, flat vector style, professional and calm mood." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA57bzwL8l2OJYOaYexg_fBv1h741o4WIEmxCsqOvwTly9YWxcLgp4-CpRYxPkC3IUvHa-bRYWAQVeNWgw2AvR9Sv2ygGQ-bixWTN7G9HguCx_OEQkho3BUnqLVffqzsY0konmmEf_z8pyiI7LIADdZMeETGgE3vKdt35bxhME-4AQ72Cs_5d6Ieg2jrrK3b-Ds4p-8tVcAl0uvNW3LAr7H4eQr2PPQj-VWafWEMo3elWSfxPevMp2JtQ"/>
+</div>
+<div>
+<p class="font-body-md text-body-md font-medium">User</p>
+</div>
+</div>
+<a class="flex items-center gap-4 py-2 text-secondary hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-body-md text-body-md">退出</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="ml-nav_width flex-1 flex flex-col min-h-screen">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center h-16 px-gutter border-b border-outline-variant bg-surface sticky top-0 z-10">
+<div class="flex items-center gap-8">
+<nav class="hidden md:flex gap-6">
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">训练记录</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">技能概览</a>
+</nav>
+</div>
+<div class="flex items-center gap-4 text-on-surface-variant">
+<button class="hover:text-primary transition-colors cursor-pointer p-2">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="hover:text-primary transition-colors cursor-pointer p-2">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Content Canvas -->
+<div class="flex-1 flex max-w-container_max_width mx-auto w-full">
+<!-- Central Stage -->
+<div class="flex-1 max-w-[800px] px-gutter py-section_margin border-r border-outline-variant border-opacity-30">
+<!-- Main Heading & Subheading -->
+<div class="mb-16">
+<h2 class="font-display-lg text-display-lg text-on-background mb-4">今天练哪一场？</h2>
+<p class="font-body-lg text-body-lg text-secondary opacity-80">下一步不是取悦别人，而是把自己的话说清楚。</p>
+</div>
+<!-- Top Section: Today's Training Task -->
+<div class="mb-section_margin">
+<h3 class="font-label-md text-label-md text-secondary tracking-widest uppercase mb-6">今日训练任务</h3>
+<div class="group relative flex flex-col md:flex-row items-start md:items-center justify-between py-6 border-b border-outline-variant transition-colors hover:border-primary">
+<div class="flex-1 mb-6 md:mb-0">
+<h4 class="font-headline-md text-headline-md text-on-background mb-3 group-hover:text-primary transition-colors">如何自然表达自己的期待</h4>
+<div class="flex items-center gap-4 text-secondary font-label-md text-label-md">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">schedule</span> 8 min</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span class="bg-surface-container-highest px-2 py-1 rounded text-on-surface-variant">技能: 清晰表达 (Clarity)</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span>难度: 基础</span>
+</div>
+</div>
+<button class="bg-[#7FAF7B] text-white font-body-md text-body-md px-8 py-3 rounded hover:bg-primary transition-colors flex-shrink-0">
+                            开始练习
+                        </button>
+</div>
+</div>
+<!-- Middle Section: Scene Entries -->
+<div class="mb-section_margin">
+<h3 class="font-label-md text-label-md text-secondary tracking-widest uppercase mb-6">情境探索</h3>
+<div class="flex flex-col">
+<!-- Selector Item 1 -->
+<div class="flex items-center justify-between py-4 border-b border-outline-variant border-opacity-50 hover:bg-surface-container-low transition-colors cursor-pointer group px-2">
+<span class="font-body-lg text-body-lg text-on-background group-hover:text-primary transition-colors">不知道怎么开口</span>
+<span class="material-symbols-outlined text-secondary group-hover:text-primary opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0">arrow_forward</span>
+</div>
+<!-- Selector Item 2 -->
+<div class="flex items-center justify-between py-4 border-b border-outline-variant border-opacity-50 hover:bg-surface-container-low transition-colors cursor-pointer group px-2">
+<span class="font-body-lg text-body-lg text-on-background group-hover:text-primary transition-colors">对方回复变短</span>
+<span class="material-symbols-outlined text-secondary group-hover:text-primary opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0">arrow_forward</span>
+</div>
+<!-- Selector Item 3 -->
+<div class="flex items-center justify-between py-4 border-b border-outline-variant border-opacity-50 hover:bg-surface-container-low transition-colors cursor-pointer group px-2">
+<span class="font-body-lg text-body-lg text-on-background group-hover:text-primary transition-colors">想发出邀约</span>
+<span class="material-symbols-outlined text-secondary group-hover:text-primary opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0">arrow_forward</span>
+</div>
+<!-- Selector Item 4 -->
+<div class="flex items-center justify-between py-4 border-b border-outline-variant border-opacity-50 hover:bg-surface-container-low transition-colors cursor-pointer group px-2">
+<span class="font-body-lg text-body-lg text-on-background group-hover:text-primary transition-colors">刚被拒绝</span>
+<span class="material-symbols-outlined text-secondary group-hover:text-primary opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0">arrow_forward</span>
+</div>
+<!-- Selector Item 5 -->
+<div class="flex items-center justify-between py-4 border-b border-outline-variant border-opacity-50 hover:bg-surface-container-low transition-colors cursor-pointer group px-2">
+<span class="font-body-lg text-body-lg text-on-background group-hover:text-primary transition-colors">不确定边界</span>
+<span class="material-symbols-outlined text-secondary group-hover:text-primary opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0">arrow_forward</span>
+</div>
+</div>
+</div>
+<!-- Bottom Section: Recent Review (Notion Style) -->
+<div>
+<h3 class="font-label-md text-label-md text-secondary tracking-widest uppercase mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">description</span>
+                        最近复盘
+                    </h3>
+<div class="py-8 px-4 text-center">
+<p class="font-body-md text-body-md text-secondary opacity-60 italic">还没有练习记录，完成第一次训练后会显示复盘。</p>
+</div>
+</div>
+</div>
+<!-- Right Sidebar: Info Panel -->
+<aside class="w-side_info_width px-gutter py-section_margin hidden lg:block">
+<div class="sticky top-[calc(64px+64px)]">
+<h3 class="font-label-md text-label-md text-secondary tracking-widest uppercase mb-8">能力成长</h3>
+<div class="radar-chart-container">
+<svg class="w-full h-full" viewbox="0 0 240 240">
+<!-- Background Webs -->
+<polygon class="radar-web" points="120,40 196,95 167,184 73,184 44,95"></polygon>
+<polygon class="radar-web" points="120,60 177,101 155,168 85,168 63,101"></polygon>
+<polygon class="radar-web" points="120,80 158,107 143,152 97,152 82,107"></polygon>
+<polygon class="radar-web" points="120,100 139,114 132,136 108,136 101,114"></polygon>
+<!-- Axes -->
+<line class="radar-axis" x1="120" x2="120" y1="120" y2="40"></line>
+<line class="radar-axis" x1="120" x2="196" y1="120" y2="95"></line>
+<line class="radar-axis" x1="120" x2="167" y1="120" y2="184"></line>
+<line class="radar-axis" x1="120" x2="73" y1="120" y2="184"></line>
+<line class="radar-axis" x1="120" x2="44" y1="120" y2="95"></line>
+<!-- Data Area (Example Values) -->
+<!-- Values: Exp: 0.8, List: 0.6, Sinc: 0.9, Tact: 0.5, Bound: 0.7 -->
+<!-- Points mapping: (120, 120 - 80*0.8), (120 + 76*0.6, 120 - 25*0.6), ... -->
+<!-- Approx polygon points: 120,56  165,105  162,177  87,164  63,102 -->
+<polygon class="radar-area" points="120,56 165,105 162,177 87,164 63,102"></polygon>
+<!-- Data Points -->
+<circle class="radar-point" cx="120" cy="56" r="3"></circle>
+<circle class="radar-point" cx="165" cy="105" r="3"></circle>
+<circle class="radar-point" cx="162" cy="177" r="3"></circle>
+<circle class="radar-point" cx="87" cy="164" r="3"></circle>
+<circle class="radar-point" cx="63" cy="102" r="3"></circle>
+<!-- Labels -->
+<text class="radar-label" x="120" y="25">表达 (Expressiveness)</text>
+<text class="radar-label" text-anchor="start" x="210" y="90">倾听 (Listening)</text>
+<text class="radar-label" text-anchor="start" x="180" y="200">真诚 (Sincerity)</text>
+<text class="radar-label" text-anchor="end" x="60" y="200">策略 (Tact)</text>
+<text class="radar-label" text-anchor="end" x="30" y="90">边界 (Boundaries)</text>
+</svg>
+</div>
+<div class="mt-8 space-y-4">
+<div class="flex items-center justify-between">
+<span class="font-body-md text-body-md text-secondary">本周训练次数</span>
+<span class="font-headline-md text-headline-md text-on-background">3</span>
+</div>
+<div class="w-full h-px bg-outline-variant opacity-50"></div>
+<div class="flex items-center justify-between">
+<span class="font-body-md text-body-md text-secondary">累计成长时长</span>
+<span class="font-headline-md text-headline-md text-on-background">45 <span class="font-body-md text-body-md text-secondary">min</span></span>
+</div>
+</div>
+</div>
+</aside>
+</div>
+<!-- Footer -->
+<footer class="w-full mt-section_margin border-t border-outline-variant bg-background">
+<div class="max-w-container_max_width mx-auto py-8 px-gutter flex flex-col md:flex-row justify-between items-center gap-4">
+<p class="font-label-md text-label-md text-secondary">© 2024 会聊 | 专业沟通心理实践</p>
+<div class="flex gap-6">
+<a class="font-label-md text-label-md text-secondary hover:underline transition-opacity" href="#">隐私协议</a>
+<a class="font-label-md text-label-md text-secondary hover:underline transition-opacity" href="#">服务条款</a>
+<a class="font-label-md text-label-md text-secondary hover:underline transition-opacity" href="#">安全提示</a>
+</div>
+</div>
+</footer>
+</main>
+</body></html>

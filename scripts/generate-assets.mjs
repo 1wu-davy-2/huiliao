@@ -9,13 +9,13 @@ const AVATAR_DIR = join(ROOT, 'public', 'images', 'avatars')
 
 // 角色与配色（取自产品设计令牌色系）
 const CHARACTERS = [
-  { id: 'lina', bg: '#e2efec', hair: '#3a423e', shirt: '#217a70', style: 'long' },
-  { id: 'ran', bg: '#f7efdc', hair: '#202522', shirt: '#b78324', style: 'bob' },
+  { id: 'lina', bg: '#eaf1e8', hair: '#3a423e', shirt: '#3c683b', style: 'long' },
+  { id: 'ran', bg: '#f7efdc', hair: '#1c1b1b', shirt: '#b78324', style: 'bob' },
   { id: 'yue', bg: '#e6f1ea', hair: '#4a3226', shirt: '#2f7d4d', style: 'ponytail' },
-  { id: 'yan', bg: '#fae9e5', hair: '#202522', shirt: '#c45846', style: 'short' },
-  { id: 'qing', bg: '#eef0f6', hair: '#3a423e', shirt: '#165e57', style: 'bun' },
+  { id: 'yan', bg: '#ffdad6', hair: '#1c1b1b', shirt: '#c45846', style: 'short' },
+  { id: 'qing', bg: '#eef0f6', hair: '#3a423e', shirt: '#245026', style: 'bun' },
   { id: 'tong', bg: '#f5efe4', hair: '#4a3226', shirt: '#66706a', style: 'long' },
-  { id: 'zhao', bg: '#e2efec', hair: '#202522', shirt: '#217a70', style: 'bob' },
+  { id: 'zhao', bg: '#eaf1e8', hair: '#1c1b1b', shirt: '#3c683b', style: 'bob' },
   { id: 'jie', bg: '#f7efdc', hair: '#3a423e', shirt: '#b78324', style: 'ponytail' },
 ]
 
@@ -73,24 +73,24 @@ function avatarSvg(c) {
 }
 
 const HERO = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" role="img" aria-label="成年人在咖啡店对坐交流的插画">
-  <rect width="800" height="400" fill="#f6f7f4"/>
+  <rect width="800" height="400" fill="#fcf9f8"/>
   <rect x="0" y="300" width="800" height="100" fill="#eef0ec"/>
-  <rect x="60" y="60" width="120" height="200" rx="8" fill="#e2efec"/>
+  <rect x="60" y="60" width="120" height="200" rx="8" fill="#eaf1e8"/>
   <rect x="620" y="70" width="120" height="180" rx="8" fill="#f7efdc"/>
   <circle cx="700" cy="120" r="26" fill="#b78324" opacity="0.35"/>
-  <rect x="240" y="250" width="40" height="50" rx="6" fill="#c4ccc6"/>
-  <rect x="280" y="250" width="40" height="50" rx="6" fill="#c4ccc6"/>
-  <rect x="520" y="250" width="40" height="50" rx="6" fill="#c4ccc6"/>
-  <rect x="560" y="250" width="40" height="50" rx="6" fill="#c4ccc6"/>
-  <rect x="376" y="196" width="48" height="30" rx="10" fill="#202522"/>
+  <rect x="240" y="250" width="40" height="50" rx="6" fill="#c2c9bd"/>
+  <rect x="280" y="250" width="40" height="50" rx="6" fill="#c2c9bd"/>
+  <rect x="520" y="250" width="40" height="50" rx="6" fill="#c2c9bd"/>
+  <rect x="560" y="250" width="40" height="50" rx="6" fill="#c2c9bd"/>
+  <rect x="376" y="196" width="48" height="30" rx="10" fill="#1c1b1b"/>
   <rect x="380" y="200" width="40" height="6" rx="3" fill="#b78324"/>
   <path d="M180 300 L180 236 Q180 196 226 190 L226 300 Z" fill="#66706a"/>
   <circle cx="204" cy="196" r="24" fill="#e8c9a8"/>
   <path d="M180 196 A24 24 0 0 1 228 196 Z" fill="#3a423e"/>
-  <path d="M140 300 L140 246 Q140 214 174 210 L174 300 Z" fill="#217a70"/>
+  <path d="M140 300 L140 246 Q140 214 174 210 L174 300 Z" fill="#3c683b"/>
   <circle cx="158" cy="216" r="20" fill="#e8c9a8"/>
-  <path d="M138 216 A20 20 0 0 1 178 216 Z" fill="#202522"/>
-  <path d="M620 300 L620 240 Q620 204 570 200 L570 300 Z" fill="#165e57"/>
+  <path d="M138 216 A20 20 0 0 1 178 216 Z" fill="#1c1b1b"/>
+  <path d="M620 300 L620 240 Q620 204 570 200 L570 300 Z" fill="#245026"/>
   <circle cx="596" cy="206" r="24" fill="#e8c9a8"/>
   <path d="M620 206 A24 24 0 0 0 572 206 Z" fill="#3a423e"/>
   <path d="M660 300 L660 250 Q660 220 628 214 L628 300 Z" fill="#b78324"/>

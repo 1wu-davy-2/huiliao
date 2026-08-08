@@ -1,36 +1,51 @@
 :root {
-  --bg: #f6f7f4;
+  /* 配色：Stitch「Serene Growth」。以设计稿内联 tailwind.config 为准，
+     与 DESIGN.md 正文描述不一致处（背景/正文/分隔线）取 config 值。 */
+  --bg: #fcf9f8;
   --surface: #ffffff;
-  --ink: #202522;
-  --muted: #5d6761;
-  --line: #d9dfda;
-  --line-strong: #c4ccc6;
-  --primary: #217a70;
-  --primary-strong: #165e57;
-  --primary-soft: #e2efec;
-  --warning: #a84436;
-  --warning-soft: #fae9e5;
+  --ink: #1c1b1b;
+  --muted: #42493f;
+  --line: #e5e2e1;
+  --line-strong: #c2c9bd;
+  --primary: #3c683b;
+  --primary-strong: #245026;
+  --primary-soft: #eaf1e8;
+  /* 描边 logo 与低强调装饰色。在浅底上约 2.4:1，不达正文对比度，禁止用于文字 */
+  --primary-container: #7faf7b;
+  --tertiary: #50616b;
+  --warning: #ba1a1a;
+  --warning-soft: #ffdad6;
   --progress: #8a6218;
   --progress-soft: #f7efdc;
   --success: #23683f;
   --success-soft: #e6f1ea;
 
-  --radius-sm: 4px;
-  --radius-md: 8px;
+  --radius-sm: 2px;
+  --radius-md: 4px;
   --radius-lg: 8px;
+  /* 设计稿 rounded-full 实配 0.75rem，不是胶囊形 */
+  --radius-pill: 12px;
 
-  --shadow-1: 0 1px 2px rgba(32, 37, 34, 0.06);
-  --shadow-2: 0 2px 8px rgba(32, 37, 34, 0.08);
+  --shadow-1: 0 1px 2px rgba(28, 27, 27, 0.06);
+  --shadow-2: 0 2px 8px rgba(28, 27, 27, 0.08);
 
-  --sidebar-width: 232px;
+  --sidebar-width: 240px;
+  --aside-width: 320px;
   --nav-rail-width: 64px;
   --bottom-nav-height: 64px;
-  --content-max: 1180px;
+  --content-max: 1440px;
   --topbar-height: 56px;
+  --gutter: 32px;
+  --section-gap: 64px;
 
-  --font-sans:
+  /* 拉丁字体在前、中文 fallback 在后：浏览器按字形逐个回退，
+     中文命中 PingFang SC，不下载任何 CJK 字形。 */
+  --cjk-fallback:
     'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC',
     system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --font-sans: 'Be Vietnam Pro', var(--cjk-fallback);
+  --font-display: 'Hanken Grotesk Variable', var(--cjk-fallback);
+  --font-label: 'Work Sans Variable', var(--cjk-fallback);
 
   --transition-fast: 160ms ease;
   --transition-base: 200ms ease;

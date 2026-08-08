@@ -4,7 +4,7 @@
   </defs>
   <g clip-path="url(#clip-qing)">
     <rect width="128" height="128" fill="#eef0f6"/>
-    <path d="M0 128 L0 102 Q64 80 128 102 L128 128 Z" fill="#165e57"/>
+    <path d="M0 128 L0 102 Q64 80 128 102 L128 128 Z" fill="#245026"/>
     <path d="M56 108 L72 108 L64 98 Z" fill="#eef0f6"/>
     <rect x="56" y="84" width="16" height="22" fill="#e8c9a8"/>
     <circle cx="64" cy="66" r="21" fill="#e8c9a8"/>

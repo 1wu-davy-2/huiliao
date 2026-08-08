@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>训练中心 - 会聊</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&amp;family=Hanken+Grotesk:wght@400;500;600;700&amp;family=Work+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-primary": "#a1d39c",
+                        "primary-container": "#7faf7b",
+                        "on-secondary-container": "#56656d",
+                        "on-tertiary-container": "#2b3c45",
+                        "surface-bright": "#fcf9f8",
+                        "secondary": "#526168",
+                        "on-primary": "#ffffff",
+                        "primary": "#3c683b",
+                        "tertiary-container": "#94a6b1",
+                        "on-background": "#1c1b1b",
+                        "on-tertiary-fixed-variant": "#384952",
+                        "secondary-fixed-dim": "#b9c9d2",
+                        "outline-variant": "#c2c9bd",
+                        "secondary-fixed": "#d5e5ee",
+                        "on-secondary-fixed": "#0f1d24",
+                        "primary-fixed": "#bdf0b6",
+                        "on-primary-container": "#164219",
+                        "primary-fixed-dim": "#a1d39c",
+                        "outline": "#72796f",
+                        "tertiary-fixed": "#d3e5f1",
+                        "background": "#fcf9f8",
+                        "on-primary-fixed-variant": "#245026",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "inverse-surface": "#313030",
+                        "surface-container-high": "#eae7e7",
+                        "on-primary-fixed": "#002205",
+                        "surface-tint": "#3c683b",
+                        "surface-variant": "#e5e2e1",
+                        "on-secondary-fixed-variant": "#3a4950",
+                        "on-secondary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-tertiary": "#ffffff",
+                        "secondary-container": "#d2e2eb",
+                        "inverse-on-surface": "#f3f0ef",
+                        "surface": "#fcf9f8",
+                        "on-surface-variant": "#42493f",
+                        "on-surface": "#1c1b1b",
+                        "surface-container-highest": "#e5e2e1",
+                        "surface-container": "#f0eded",
+                        "tertiary": "#50616b",
+                        "surface-container-low": "#f6f3f2",
+                        "surface-dim": "#dcd9d9",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed-dim": "#b7c9d4",
+                        "on-tertiary-fixed": "#0c1e26",
+                        "on-error": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "gutter": "32px",
+                        "side_info_width": "320px",
+                        "nav_width": "240px",
+                        "container_max_width": "1440px",
+                        "unit": "8px",
+                        "section_margin": "64px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Work Sans"],
+                        "body-md": ["Be Vietnam Pro"],
+                        "body-lg": ["Be Vietnam Pro"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "display-lg": ["Hanken Grotesk"],
+                        "headline-md": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "label-md": ["14px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "1.4", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #fcf9f8; }
+        .hover-lift { transition: transform 0.2s ease, opacity 0.2s ease; }
+        .hover-lift:hover { transform: translateY(-2px); opacity: 0.9; }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased flex overflow-hidden h-screen">
+<!-- SideNavBar -->
+<nav class="hidden md:flex bg-background h-full w-nav_width fixed left-0 top-0 border-r border-outline-variant flex-col py-gutter px-6 z-40">
+<div class="mb-12">
+<h1 class="font-headline-md text-headline-md text-primary">会聊</h1>
+<p class="font-label-md text-label-md text-secondary mt-1">Restrained Growth</p>
+</div>
+<ul class="flex-1 space-y-2">
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:text-primary hover:bg-surface-container-low transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span>首页</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary font-bold border-r-2 border-primary bg-surface-container-low font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="exercise" style="font-variation-settings: 'FILL' 1;">exercise</span>
+<span>训练中心</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:text-primary hover:bg-surface-container-low transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>设置</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:text-primary hover:bg-surface-container-low transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="insights">insights</span>
+<span>进度统计</span>
+</a>
+</li>
+</ul>
+<div class="mt-auto pt-6 border-t border-outline-variant w-full">
+<button class="w-full flex items-center justify-center gap-2 bg-primary text-on-primary py-3 rounded-full hover:opacity-90 transition-opacity font-label-md text-label-md mb-6">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                开始新对话
+            </button>
+<a class="flex items-center gap-3 px-4 py-2 text-secondary hover:text-primary transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span>退出</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 ml-0 md:ml-nav_width h-full overflow-y-auto">
+<!-- TopAppBar (Mobile & Desktop structure alignment, though nav is left) -->
+<header class="flex justify-between items-center h-16 px-gutter border-b border-outline-variant bg-surface sticky top-0 z-30">
+<div class="flex items-center gap-8">
+<h2 class="font-headline-md text-headline-md text-primary md:hidden">会聊</h2>
+<nav class="hidden md:flex gap-6">
+<a class="text-primary border-b-2 border-primary pb-1 font-body-md text-body-md" href="#">训练记录</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">技能概览</a>
+</nav>
+</div>
+<div class="flex items-center gap-4 text-on-surface-variant">
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors" data-icon="account_circle">account_circle</span>
+</div>
+</header>
+<!-- Training Canvas -->
+<div class="max-w-[1000px] mx-auto py-section_margin px-gutter">
+<header class="mb-16">
+<h1 class="font-display-lg text-display-lg text-on-surface mb-4">训练实验室</h1>
+<p class="font-body-lg text-body-lg text-secondary max-w-2xl">
+                    选择一个专门的环境来磨练你的沟通技巧。每一次练习都是通向更清晰、更具同理心表达的一步。
+                </p>
+</header>
+<div class="space-y-section_margin">
+<!-- Entry Area 1: 消息诊断 -->
+<section class="group relative block cursor-pointer">
+<div class="flex flex-col md:flex-row items-stretch gap-8 border-b border-outline-variant pb-12 transition-all hover:border-primary-container">
+<div class="md:w-1/3 flex flex-col justify-between">
+<div>
+<span class="inline-block px-3 py-1 bg-surface-container-high text-on-surface-variant font-label-md text-label-md rounded mb-6">诊断工具</span>
+<h3 class="font-headline-lg text-headline-lg text-on-surface mb-4 group-hover:text-primary transition-colors">消息诊断</h3>
+<p class="font-body-md text-body-md text-secondary">
+                                    分析你的表达方式，发现可能造成误解的位置。通过解构历史消息，找出情绪盲点和语意歧义。
+                                </p>
+</div>
+<div class="mt-8 flex items-center text-primary font-label-md text-label-md group-hover:translate-x-2 transition-transform duration-300">
+                                开始诊断 <span class="material-symbols-outlined ml-2 text-[18px]">arrow_forward</span>
+</div>
+</div>
+<div class="md:w-2/3 h-[300px] bg-surface-container-low rounded-xl border border-outline-variant overflow-hidden relative">
+<div class="bg-cover bg-center w-full h-full opacity-80 mix-blend-multiply group-hover:scale-105 transition-transform duration-700 ease-out" data-alt="A clean, minimalist abstract digital illustration representing text analysis. Floating lines of text turning into glowing particles of soft green and grey, set against a pristine white background. High-key lighting, modern corporate aesthetic, conveying clarity, intellectual focus, and structural analysis. Flat, editorial style." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDXBlY2WtPHlDp9S_KJW_uwrgUYYXFLXVGOs487uEfk4dCzZkYEH31Q6XL7f2NoCha5cIVPZYAbh6wsy6FbjLOkrHRDL3xAVhP99Il9Z3iYYxqjoamuqrtFblHgGM6H4aOmiU0ncwe1qVDKc8Gvqck5SuiOe6NBo-HnHCoez32bPi9Js3hLTwA5loTNWoPiuYC5ktClSBXPX6FZGdyE-O7C9Wvg3txfBdYSM5on4lO643eW7X58XaH0rg')"></div>
+<!-- UI Overlay Hint -->
+<div class="absolute bottom-6 right-6 bg-surface p-4 border border-outline-variant rounded shadow-[0_4px_24px_rgba(0,0,0,0.04)]">
+<div class="w-32 h-2 bg-surface-container-high rounded-full mb-3">
+<div class="w-2/3 h-full bg-primary-container rounded-full"></div>
+</div>
+<div class="w-24 h-2 bg-surface-container-high rounded-full">
+<div class="w-1/2 h-full bg-secondary-fixed-dim rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Entry Area 2: AI 情景模拟 -->
+<section class="group relative block cursor-pointer">
+<div class="flex flex-col md:flex-row-reverse items-stretch gap-8 border-b border-outline-variant pb-12 transition-all hover:border-primary-container">
+<div class="md:w-1/3 flex flex-col justify-between">
+<div>
+<span class="inline-block px-3 py-1 bg-surface-container-high text-on-surface-variant font-label-md text-label-md rounded mb-6">实战演练</span>
+<h3 class="font-headline-lg text-headline-lg text-on-surface mb-4 group-hover:text-primary transition-colors">AI 情景模拟</h3>
+<p class="font-body-md text-body-md text-secondary">
+                                    模拟真实沟通场景，进行多轮练习。在安全的环境中应对困难对话、练习同理心回应和冲突管理。
+                                </p>
+</div>
+<div class="mt-8 flex items-center text-primary font-label-md text-label-md group-hover:translate-x-2 transition-transform duration-300">
+                                选择场景 <span class="material-symbols-outlined ml-2 text-[18px]">arrow_forward</span>
+</div>
+</div>
+<div class="md:w-2/3 h-[300px] bg-surface-container-low rounded-xl border border-outline-variant overflow-hidden relative">
+<div class="bg-cover bg-center w-full h-full opacity-80 mix-blend-multiply group-hover:scale-105 transition-transform duration-700 ease-out" data-alt="A minimalist architectural 3D rendering of two abstract humanoid figures facing each other, connected by subtle glowing lines. The environment is a clean, bright, white studio space with soft ambient shadows. Accents of soft green and muted deep grey. The mood is calm, professional, and focused on interpersonal dynamics, suitable for a high-end psychological training tool." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA1FxPKSQBTJ_ld0zkWhToctzcqaaWokrSNd6owJRAPWZ45HR4dol66cUT_NDaAOjwi4NnG1TuPw64LDIH8IzZXnN6xuEFtkoda-BEWtvy-mSF9KR1-4kQQOUkKDIhDXB5j8Q2UzP3gZm13_59dku3UEZPjB8pxOXcb3udPPwnTsMZw0d2EdgAVsOOhXZ7nsx1X_fvqOEBlmUdQGKa48mmESmyrciktjEx78P3Hq3TVQ31gYmAjBXlKGQ')"></div>
+<!-- UI Overlay Hint -->
+<div class="absolute top-6 left-6 flex flex-col gap-2">
+<span class="px-3 py-1.5 bg-surface text-on-surface border border-outline-variant rounded-full text-[12px] font-medium shadow-[0_4px_12px_rgba(0,0,0,0.02)]">职场沟通</span>
+<span class="px-3 py-1.5 bg-surface text-on-surface border border-outline-variant rounded-full text-[12px] font-medium shadow-[0_4px_12px_rgba(0,0,0,0.02)] w-max">亲密关系</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+<!-- Footer (Semantic Shell) -->
+<footer class="w-full bg-background mt-section_margin border-t border-outline-variant">
+<div class="max-w-container_max_width mx-auto py-8 px-gutter flex justify-between items-center text-secondary font-label-md text-label-md">
+<p>© 2024 会聊 | 专业沟通心理实践</p>
+<div class="flex gap-6">
+<a class="hover:underline hover:text-primary transition-colors" href="#">隐私协议</a>
+<a class="hover:underline hover:text-primary transition-colors" href="#">服务条款</a>
+<a class="hover:underline hover:text-primary transition-colors" href="#">安全提示</a>
+</div>
+</div>
+</footer>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full bg-surface border-t border-outline-variant flex justify-around items-center h-16 z-50 px-4">
+<a class="flex flex-col items-center text-secondary hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="text-[10px] mt-1 font-medium">首页</span>
+</a>
+<a class="flex flex-col items-center text-primary" href="#">
+<span class="material-symbols-outlined" data-icon="exercise" style="font-variation-settings: 'FILL' 1;">exercise</span>
+<span class="text-[10px] mt-1 font-bold">训练中心</span>
+</a>
+<a class="flex flex-col items-center text-secondary hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-[10px] mt-1 font-medium">设置</span>
+</a>
+<a class="flex flex-col items-center text-secondary hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="insights">insights</span>
+<span class="text-[10px] mt-1 font-medium">进度统计</span>
+</a>
+</nav>
+</body></html>

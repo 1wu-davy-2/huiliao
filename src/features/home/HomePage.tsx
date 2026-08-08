@@ -1,9 +1,10 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowRight, PlayCircle, NotebookPen } from 'lucide-react'
+import { ArrowRight, Clock, NotebookPen } from 'lucide-react'
 import { useAppData } from '@/lib/settings/AppDataContext'
 import { SCENARIOS, getScenario } from '@/content'
 import { CHALLENGE_OPTIONS, recommendScenario } from '@/lib/skills/skills'
 import { aggregateSkillScores } from '@/lib/skills/skills'
+import { SkillRadar } from '@/components/ui/SkillRadar'
 import { SkillBars } from '@/components/ui/SkillBars'
 
 const QUICK_ENTRIES = [
@@ -36,123 +37,185 @@ export default function HomePage() {
   const weekCompleted = data.progress.filter(
     (r) => Date.now() - new Date(r.completedAt).getTime() < 7 * 24 * 3600 * 1000,
   ).length
+  const totalMinutes = data.progress.reduce((sum, r) => {
+    const s = getScenario(r.scenarioId)
+    return s ? sum + s.durationMinutes : sum
+  }, 0)
+  const hasProgress = data.progress.length > 0
 
   return (
-    <>
-      <header className="page-head">
-        <h1 className="page-title">
-          今天想练点什么？
-          {challengeLabels.length > 0 && (
-            <span className="muted" style={{ fontSize: 14, fontWeight: 400, marginLeft: 8 }}>
-              训练目标：{challengeLabels.map((c) => c.label).join('、')}
-            </span>
-          )}
-        </h1>
-        <p className="page-sub">
-          这是一间练习场：只评价你能控制的表达和行为，不评价对方给你的结果。
-        </p>
-      </header>
-
-      <div className="card" style={{ background: 'var(--primary-soft)', borderColor: 'var(--primary)' }}>
-        <div className="row" style={{ justifyContent: 'space-between' }}>
-          <div className="stack" style={{ gap: 4 }}>
-            <p className="bold">
-              {weekCompleted > 0
-                ? `本周已完成 ${weekCompleted} 个情境练习`
-                : '还没有完成的练习，从第一个开始'}
-            </p>
-            <p className="small muted">
-              {recommended
-                ? `今日推荐：${recommended.title}（约 ${recommended.durationMinutes} 分钟 · ${recommended.difficulty}）`
-                : '所有练习都已游历，可以随时重练或进入消息实验室。'}
-            </p>
-          </div>
-          <PlayCircle size={28} style={{ color: 'var(--primary-strong)' }} aria-hidden="true" />
-        </div>
-        <button
-          type="button"
-          className="btn btn-primary mt-16"
-          onClick={() => navigate(recommended ? `/practice/${recommended.id}` : '/practice')}
-        >
-          继续练习
-          <ArrowRight size={16} aria-hidden="true" />
-        </button>
-      </div>
-
-      <section className="section" aria-labelledby="quick-title">
-        <div className="section-head">
-          <h2 className="section-title" id="quick-title">
-            我现在卡在……
-          </h2>
-        </div>
-        <div className="check-grid" role="list">
-          {QUICK_ENTRIES.map((entry) => (
-            <Link key={entry.label} to={entry.target} className="check-card" role="listitem">
-              <span>
-                <span className="bold">{entry.label}</span>
-                <span className="small muted" style={{ display: 'block' }}>
-                  {entry.hint}
-                </span>
+    <div className="page-with-aside">
+      <div>
+        <header className="page-head">
+          <h1 className="page-title">
+            今天想练点什么？
+            {challengeLabels.length > 0 && (
+              <span
+                className="muted"
+                style={{ fontSize: 14, fontWeight: 400, marginLeft: 8 }}
+              >
+                训练目标：{challengeLabels.map((c) => c.label).join('、')}
               </span>
-            </Link>
-          ))}
-        </div>
-      </section>
+            )}
+          </h1>
+          <p className="page-sub">
+            这是一间练习场：只评价你能控制的表达和行为，不评价对方给你的结果。
+          </p>
+        </header>
 
-      <section className="section" aria-labelledby="skill-title">
-        <div className="section-head">
-          <h2 className="section-title" id="skill-title">
-            能力概况
-          </h2>
-          {data.progress.length > 0 && (
-            <Link to="/progress" className="small">
-              查看详情
-            </Link>
-          )}
-        </div>
-        <div className="card">
-          {data.progress.length === 0 ? (
-            <p className="muted">
-              完成第一个情境练习后，这里才会出现你的能力概况。没有数据时不显示默认分数。
-            </p>
-          ) : (
+        <section className="section" aria-labelledby="today-title">
+          <div className="section-head">
+            <h2 className="section-title" id="today-title">
+              今日训练任务
+            </h2>
+          </div>
+          <div className="task-row" style={{ paddingBottom: 24, borderBottom: '1px solid var(--line)' }}>
+            <div style={{ flex: '1 1 320px', minWidth: 0 }}>
+              <p className="bold" style={{ fontSize: 22, lineHeight: 1.35, fontFamily: 'var(--font-display)' }}>
+                {recommended
+                  ? recommended.title
+                  : hasProgress
+                  ? '所有练习都已游历，可以随时重练或进入消息实验室。'
+                  : '还没有完成的练习，从第一个开始'}
+              </p>
+              {recommended && (
+                <div className="task-meta">
+                  <span className="row" style={{ gap: 4 }}>
+                    <Clock size={14} aria-hidden="true" />
+                    {recommended.durationMinutes} 分钟
+                  </span>
+                  <span className="meta-dot" aria-hidden="true">·</span>
+                  <span className="tag">难度：{recommended.difficulty}</span>
+                </div>
+              )}
+              {weekCompleted > 0 && (
+                <p className="small muted mt-8">本周已完成 {weekCompleted} 个情境练习</p>
+              )}
+            </div>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => navigate(recommended ? `/practice/${recommended.id}` : '/practice')}
+            >
+              继续练习
+              <ArrowRight size={16} aria-hidden="true" />
+            </button>
+          </div>
+        </section>
+
+        <section className="section" aria-labelledby="quick-title">
+          <div className="section-head">
+            <h2 className="section-title" id="quick-title">
+              我现在卡在……
+            </h2>
+          </div>
+          <div role="list">
+            {QUICK_ENTRIES.map((entry) => (
+              <Link
+                key={entry.label}
+                to={entry.target}
+                className="explore-row"
+                role="listitem"
+              >
+                <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <span>{entry.label}</span>
+                  <span className="small muted">{entry.hint}</span>
+                </span>
+                <ArrowRight size={18} aria-hidden="true" style={{ color: 'var(--muted)', flex: 'none' }} />
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="section" aria-labelledby="skill-title">
+          <div className="section-head">
+            <h2 className="section-title" id="skill-title">
+              能力概况
+            </h2>
+            {hasProgress && (
+              <Link to="/progress" className="small">
+                查看详情
+              </Link>
+            )}
+          </div>
+          {hasProgress ? (
             <>
               <SkillBars scores={skills} />
               <p className="small muted mt-16">
                 依据已完成练习的反馈汇总。这里只统计沟通能力与边界判断，不统计任何关系结果。
               </p>
             </>
-          )}
-        </div>
-      </section>
-
-      <section className="section" aria-labelledby="recent-title">
-        <div className="section-head">
-          <h2 className="section-title" id="recent-title">
-            最近复盘
-          </h2>
-          <Link to="/progress" className="small">
-            全部
-          </Link>
-        </div>
-        {recentReflection ? (
-          <div className="card">
-            <p className="small muted">
-              {recentReflectionScenario?.title ?? '练习复盘'} ·{' '}
-              {new Date(recentReflection.createdAt).toLocaleDateString('zh-CN')}
+          ) : (
+            <p className="muted">
+              完成第一个情境练习后，这里才会出现你的能力概况。没有数据时不显示默认分数。
             </p>
-            <p className="mt-8">{recentReflection.text}</p>
-          </div>
-        ) : (
-          <div className="empty">
-            <NotebookPen size={28} aria-hidden="true" />
-            <p>还没有保存过复盘。完成一次情境练习后，可以在结尾写下你的私密复盘。</p>
-            <Link to="/practice" className="btn btn-secondary">
-              进入情境库
+          )}
+        </section>
+
+        <section className="section" aria-labelledby="recent-title">
+          <div className="section-head">
+            <h2 className="section-title" id="recent-title">
+              最近复盘
+            </h2>
+            <Link to="/progress" className="small">
+              全部
             </Link>
           </div>
-        )}
-      </section>
-    </>
+          {recentReflection ? (
+            <div style={{ paddingTop: 4 }}>
+              <p className="small muted">
+                {recentReflectionScenario?.title ?? '练习复盘'} ·{' '}
+                {new Date(recentReflection.createdAt).toLocaleDateString('zh-CN')}
+              </p>
+              <p className="mt-8">{recentReflection.text}</p>
+            </div>
+          ) : (
+            <div className="empty">
+              <NotebookPen size={28} aria-hidden="true" />
+              <p>还没有保存过复盘。完成一次情境练习后，可以在结尾写下你的私密复盘。</p>
+              <Link to="/practice" className="btn btn-secondary">
+                进入情境库
+              </Link>
+            </div>
+          )}
+        </section>
+      </div>
+
+      <aside className="page-aside" aria-labelledby="growth-title">
+        <h2 className="section-title" id="growth-title" style={{ marginBottom: 24 }}>
+          能力成长
+        </h2>
+        <div style={{ maxWidth: 280, margin: '0 auto' }}>
+          {hasProgress ? (
+            <SkillRadar scores={skills} />
+          ) : (
+            <p className="muted small" style={{ textAlign: 'center', padding: '24px 0' }}>
+              完成第一次练习后，这里会显示能力雷达。
+            </p>
+          )}
+        </div>
+        <div className="mt-24">
+          <div className="aside-stat">
+            <span className="aside-stat-label">本周训练次数</span>
+            <span className="aside-stat-value">
+              {hasProgress ? weekCompleted : <span className="muted">—</span>}
+            </span>
+          </div>
+          <div className="aside-stat">
+            <span className="aside-stat-label">累计成长时长</span>
+            <span className="aside-stat-value">
+              {hasProgress ? (
+                <>
+                  {totalMinutes}
+                  <span className="aside-stat-unit">min</span>
+                </>
+              ) : (
+                <span className="muted">—</span>
+              )}
+            </span>
+          </div>
+        </div>
+      </aside>
+    </div>
   )
 }

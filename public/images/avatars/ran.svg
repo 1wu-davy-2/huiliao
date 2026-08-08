@@ -10,8 +10,8 @@
     <circle cx="64" cy="66" r="21" fill="#e8c9a8"/>
     <circle cx="43" cy="66" r="6" fill="#e8c9a8"/>
     <circle cx="85" cy="66" r="6" fill="#e8c9a8"/>
-    <path d="M24 80 A40 40 0 0 1 104 80 L104 78 L24 78 Z" fill="#202522"/>
-    <rect x="22" y="66" width="8" height="22" rx="4" fill="#202522"/>
-    <rect x="98" y="66" width="8" height="22" rx="4" fill="#202522"/>
+    <path d="M24 80 A40 40 0 0 1 104 80 L104 78 L24 78 Z" fill="#1c1b1b"/>
+    <rect x="22" y="66" width="8" height="22" rx="4" fill="#1c1b1b"/>
+    <rect x="98" y="66" width="8" height="22" rx="4" fill="#1c1b1b"/>
   </g>
 </svg>

@@ -3,9 +3,9 @@
     <clipPath id="clip-lina"><circle cx="64" cy="64" r="64"/></clipPath>
   </defs>
   <g clip-path="url(#clip-lina)">
-    <rect width="128" height="128" fill="#e2efec"/>
-    <path d="M0 128 L0 102 Q64 80 128 102 L128 128 Z" fill="#217a70"/>
-    <path d="M56 108 L72 108 L64 98 Z" fill="#e2efec"/>
+    <rect width="128" height="128" fill="#eaf1e8"/>
+    <path d="M0 128 L0 102 Q64 80 128 102 L128 128 Z" fill="#3c683b"/>
+    <path d="M56 108 L72 108 L64 98 Z" fill="#eaf1e8"/>
     <rect x="56" y="84" width="16" height="22" fill="#e8c9a8"/>
     <circle cx="64" cy="66" r="21" fill="#e8c9a8"/>
     <circle cx="43" cy="66" r="6" fill="#e8c9a8"/>

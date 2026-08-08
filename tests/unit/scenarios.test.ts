@@ -124,13 +124,16 @@ describe('场景数据', () => {
 
   it('s15：黄色或红色信号后，合理选项不再推进任何内容', () => {
     const s15 = SCENARIOS_DRAFT.find((s) => s.id === 's15')!
-    const signalMarkers = /慢一点|停！|我不想继续了/
-    const escalation = /轻一点|继续|再|加个|试试|五分钟/
+    const signalMarkers = /黄灯|慢一点|不太舒服|停！|红灯|安全词|我不想继续/
+    const escalation = /轻一点继续|加个插入|再试一次|再给我五分钟|继续做|再插|再用力/
     for (const node of s15.nodes) {
       if (signalMarkers.test(node.characterMessage)) {
         for (const choice of node.choices) {
           if (choice.quality === 'good') {
-            expect(escalation.test(choice.text), `${node.id}/${choice.id}`).toBe(false)
+            expect(
+              escalation.test(choice.text),
+              `${node.id}/${choice.id} good 选项不得推进：${choice.text}`,
+            ).toBe(false)
           }
         }
       }
@@ -139,12 +142,17 @@ describe('场景数据', () => {
 
   it('s15：红色路径只能到达 safe-stop 或拒绝（停止类）结局', () => {
     const s15 = SCENARIOS_DRAFT.find((s) => s.id === 's15')!
-    const redNodes = s15.nodes.filter((n) => /停！|我不想继续了/.test(n.characterMessage))
+    const redNodes = s15.nodes.filter((n) =>
+      /停！|红灯|安全词|我不想继续/.test(n.characterMessage),
+    )
+    expect(redNodes.length).toBeGreaterThan(0)
     for (const node of redNodes) {
       for (const choice of node.choices) {
         const ending = s15.endings.find((e) => e.id === choice.goesTo)
         if (ending) {
-          expect(['safe-stop', 'rejection'], `${node.id}/${choice.id} → ${ending.tone}`).toContain(ending.tone)
+          expect(['safe-stop', 'rejection'], `${node.id}/${choice.id} → ${ending.tone}`).toContain(
+            ending.tone,
+          )
         }
       }
     }
@@ -152,7 +160,7 @@ describe('场景数据', () => {
 
   it('s14：用关系承诺交换同意或施压的选项均为 risky 且不达正向结局', () => {
     const s14 = SCENARIOS_DRAFT.find((s) => s.id === 's14')!
-    const coercionPattern = /都这么熟|试一次|别停|总得说|先退/
+    const coercionPattern = /都这么熟|试一次|别停|总得说|先退|爱我就|证明你/
     for (const node of s14.nodes) {
       for (const choice of node.choices) {
         if (coercionPattern.test(choice.text)) {
@@ -164,17 +172,61 @@ describe('场景数据', () => {
     }
   })
 
+  it('s16：事后照护中强迫复盘或强迫触碰为 risky', () => {
+    const s16 = SCENARIOS_DRAFT.find((s) => s.id === 's16')!
+    expect(s16).toBeDefined()
+    for (const node of s16.nodes) {
+      for (const choice of node.choices) {
+        if (/必须说清楚|抱紧我你就会好|现在就复盘|不许一个人待着/.test(choice.text)) {
+          expect(choice.quality, `${node.id}/${choice.id}`).toBe('risky')
+        }
+      }
+    }
+  })
+
+  it('s17：对方撤回后 good 选项不得要求继续性接触升级', () => {
+    const s17 = SCENARIOS_DRAFT.find((s) => s.id === 's17')!
+    expect(s17).toBeDefined()
+    const withdraw = s17.nodes.filter((n) =>
+      /不想继续|改主意|做到这里|不要进去|不要插入|不要再有性接触/.test(n.characterMessage),
+    )
+    expect(withdraw.length).toBeGreaterThan(0)
+    for (const node of withdraw) {
+      for (const c of node.choices) {
+        if (c.quality === 'good') {
+          expect(
+            /继续做|再插|再含|再用力|求你再/.test(c.text),
+            `${node.id}/${c.id}`,
+          ).toBe(false)
+        }
+      }
+    }
+  })
+
+  it('s18：把偏好污名化或强迫尝试对侧角色为 risky', () => {
+    const s18 = SCENARIOS_DRAFT.find((s) => s.id === 's18')!
+    expect(s18).toBeDefined()
+    for (const node of s18.nodes) {
+      for (const c of node.choices) {
+        if (/有病|必须让你|不试就分手|女人就该/.test(c.text)) {
+          expect(c.quality, `${node.id}/${c.id}`).toBe('risky')
+        }
+      }
+    }
+  })
+
   it('draft 场景不在主内容入口中（不进生产 bundle）', () => {
-    // 主入口 SCENARIOS 不包含任何 draft 场景
     expect(SCENARIOS.some((s) => s.reviewStatus === 'draft')).toBe(false)
-    // draft 场景集中在独立文件中，全部标记为 draft
-    expect(SCENARIOS_DRAFT.length).toBeGreaterThanOrEqual(2)
+    expect(SCENARIOS_DRAFT.length).toBeGreaterThanOrEqual(5)
+    expect(SCENARIOS_DRAFT.map((s) => s.id).sort()).toEqual(
+      ['s14', 's15', 's16', 's17', 's18'].sort(),
+    )
     expect(SCENARIOS_DRAFT.every((s) => s.reviewStatus === 'draft')).toBe(true)
-    // draft 场景同样通过 schema 与图校验
     for (const scenario of SCENARIOS_DRAFT) {
+      expect(scenario.character.age).toBeGreaterThanOrEqual(18)
       expect(() => scenarioSchema.parse(scenario)).not.toThrow()
-      expect(validateScenarioGraph(scenario)).toEqual([])
-      expect(validateScenarioPaths(scenario)).toEqual([])
+      expect(validateScenarioGraph(scenario), scenario.id).toEqual([])
+      expect(validateScenarioPaths(scenario), scenario.id).toEqual([])
     }
   })
 

@@ -69,6 +69,10 @@ export default function AppLayout() {
         </header>
         <main id="main-content" className="content">
           <Outlet />
+          <footer className="app-footer">
+            <span>© 2026 会聊</span>
+            <NavLink to="/privacy">隐私协议</NavLink>
+          </footer>
         </main>
       </div>
       <nav className="bottom-nav" aria-label="主导航（移动端）">
