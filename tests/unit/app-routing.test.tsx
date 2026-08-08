@@ -102,7 +102,7 @@ describe('路由与首次设置门禁', () => {
     await waitFor(() => {
       expect(window.localStorage.getItem(STORAGE_NAMESPACE)).toBeNull()
     })
-    expect(screen.getByRole('heading', { name: '首次设置' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: '首次设置' })).toBeInTheDocument()
   })
 
   it('五个一级导航入口均可到达', async () => {
