@@ -6,7 +6,7 @@
 
 ## 当前阶段
 
-阶段 1：整理并提交当前工作树（进行中）
+阶段 1：整理并提交当前工作树（已完成）
 
 ## 阶段安排
 
@@ -16,7 +16,7 @@
 - [x] 确认 Stitch UI 资料位于 `docs/design/stitch/`
 - [x] 确定纳入源码、测试、静态资源、字体许可证和设计资料
 - [x] 排除 `.playwright-cli/` 与 `tsconfig.app.tsbuildinfo`
-- [ ] 创建规范化提交并推送 `feature/ai-trial-lab`
+- [x] 创建规范化提交并推送 `feature/ai-trial-lab`
 
 ### 阶段 2：UI 与交互收敛（后续）
 
@@ -47,5 +47,6 @@
 
 - 目标远端：`origin`（GitHub）
 - 目标分支：`feature/ai-trial-lab`
-- 提交信息：`待本轮提交后回填`
-- 推送状态：待执行
+- 提交信息：`bd0cd55 feat: 保存当前 UI 与 AI 试炼工作区`
+- 推送状态：已推送到 `origin/feature/ai-trial-lab`
+- Pull Request 入口：<https://github.com/1wu-davy-2/huiliao/pull/new/feature/ai-trial-lab>
