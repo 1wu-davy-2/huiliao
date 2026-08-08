@@ -43,6 +43,9 @@ export default function AiTrialPage() {
   const apiKeyRef = useRef(apiKey)
   apiKeyRef.current = apiKey
 
+  // 当前进行中请求的取消控制器；取消只清除挂起状态，不消耗轮数
+  const abortRef = useRef<AbortController | null>(null)
+
   // 清空 API key 当协议或目标变化
   const clearKey = useCallback(() => {
     setApiKey('')
@@ -53,9 +56,12 @@ export default function AiTrialPage() {
     clearKey()
   }, [protocol, targetKind, presetId, customUrl, clearKey])
 
-  // 清空 key on unmount
+  // 清空 key 并中止进行中的请求 on unmount
   useEffect(() => {
-    return () => setApiKey('')
+    return () => {
+      abortRef.current?.abort()
+      setApiKey('')
+    }
   }, [])
 
   const pool = getPublishedTrials()
@@ -104,13 +110,13 @@ export default function AiTrialPage() {
     setErrorMsg(null)
   }, [challenge, apiKey, model, consent, roundLimit])
 
-  const handleSubmit = useCallback(async (content: string) => {
-    if (!challenge || !apiKeyRef.current) return
+  const handleSubmit = useCallback(async (content: string): Promise<boolean> => {
+    if (!challenge || !apiKeyRef.current) return false
     // 安全检查
     const safety = safetyCheck(content)
     if (safety.level === 'blocked') {
       setErrorMsg(safety.explanation)
-      return
+      return false
     }
 
     const requestId = generateId()
@@ -120,29 +126,52 @@ export default function AiTrialPage() {
       ? { kind: 'preset' as const, presetId }
       : { kind: 'custom' as const, baseUrl: customUrl }
 
+    const controller = new AbortController()
+    abortRef.current = controller
+
     try {
-      const resp = await sendTurn(apiKeyRef.current, {
-        mode,
-        difficulty,
-        challengeId: challenge.id,
-        protocol,
-        target,
-        model,
-        roundLimit,
-        roundsUsed: state.roundsUsed,
-        messages: [
-          ...state.messages.map((m) => ({ role: m.role, content: m.content })),
-          { role: 'user' as const, content },
-        ],
-      })
+      const resp = await sendTurn(
+        apiKeyRef.current,
+        {
+          mode,
+          difficulty,
+          challengeId: challenge.id,
+          protocol,
+          target,
+          model,
+          roundLimit,
+          roundsUsed: state.roundsUsed,
+          messages: [
+            ...state.messages.map((m) => ({ role: m.role, content: m.content })),
+            { role: 'user' as const, content },
+          ],
+        },
+        controller.signal,
+      )
       dispatch({ type: 'MODEL_RESPONSE', requestId, content: resp.text })
       setErrorMsg(null)
+      return true
     } catch (err: unknown) {
       const e = err as { code?: string; message?: string }
-      dispatch({ type: 'REQUEST_FAILED', requestId, errorCode: e.code || 'NETWORK' })
-      setErrorMsg(e.message || '请求失败')
+      if (e.code === 'ABORTED') {
+        // 用户主动取消：清除挂起状态即可，不消耗轮数，也不当作失败提示；
+        // 返回 false 让输入框恢复草稿，便于修改后重试
+        dispatch({ type: 'CANCEL_REQUEST' })
+        setErrorMsg(null)
+      } else {
+        dispatch({ type: 'REQUEST_FAILED', requestId, errorCode: e.code || 'NETWORK' })
+        setErrorMsg(e.message || '请求失败')
+      }
+      return false
+    } finally {
+      if (abortRef.current === controller) abortRef.current = null
     }
   }, [challenge, mode, difficulty, protocol, targetKind, presetId, customUrl, model, roundLimit, state.roundsUsed, state.messages])
+
+  // 取消进行中的请求（不消耗轮数）
+  const handleCancel = useCallback(() => {
+    abortRef.current?.abort()
+  }, [])
 
   const handleFinish = useCallback(async () => {
     dispatch({ type: 'FINISH' })
@@ -272,7 +301,24 @@ export default function AiTrialPage() {
     }
 
     doEvaluate()
-  }, [state.phase])
+    // 依赖中的运行期字段在 evaluating 阶段不会再变化（输入区已禁用、设置页已卸载），
+    // 因此即使它们变化也只会在守卫处提前返回，不会重复评估或重复保存。
+  }, [
+    state.phase,
+    state.messages,
+    state.roundsUsed,
+    challenge,
+    mode,
+    difficulty,
+    targetKind,
+    presetId,
+    customUrl,
+    protocol,
+    model,
+    roundLimit,
+    saveTrialSummary,
+    removeTrialSummary,
+  ])
 
   const loadHistory = useCallback(async () => {
     const sessions = await listTrialSessions()
@@ -421,6 +467,7 @@ export default function AiTrialPage() {
           errorMsg={errorMsg}
           evalResult={evalResult}
           onSubmit={handleSubmit}
+          onCancel={handleCancel}
           onFinish={handleFinish}
           onReset={() => { setView('setup'); dispatch({ type: 'RESET' }); setEvalResult(null) }}
         />
@@ -448,6 +495,7 @@ function TrialActiveView({
   errorMsg,
   evalResult,
   onSubmit,
+  onCancel,
   onFinish,
   onReset,
 }: {
@@ -456,7 +504,8 @@ function TrialActiveView({
   state: ReturnType<typeof createInitialState>
   errorMsg: string | null
   evalResult: TrialEvaluation | null
-  onSubmit: (content: string) => Promise<void>
+  onSubmit: (content: string) => Promise<boolean>
+  onCancel: () => void
   onFinish: () => void
   onReset: () => void
 }) {
@@ -466,8 +515,10 @@ function TrialActiveView({
   const handleSend = async () => {
     if (!input.trim() || submitting) return
     setSubmitting(true)
-    await onSubmit(input)
-    setInput('')
+    // 仅真正完成一轮（收到模型回复）时清空草稿；
+    // 取消或失败时保留草稿，便于修改后重试
+    const committed = await onSubmit(input)
+    if (committed) setInput('')
     setSubmitting(false)
   }
 
@@ -475,6 +526,8 @@ function TrialActiveView({
     return (
       <div className="ai-result">
         <h2>试炼完成</h2>
+        <p className="muted">第 {state.roundsUsed} / {state.roundLimit} 轮</p>
+        {state.roundsUsed >= state.roundLimit && <p className="ai-status">已达到你设定的轮数</p>}
         <section className="card">
           <h3>硬规则检查</h3>
           <p>得分: {state.hardScore} / 100</p>
@@ -546,6 +599,7 @@ function TrialActiveView({
         <textarea
           className="ai-textarea"
           rows={4}
+          aria-label={mode === 'communication' ? '你的回应' : '你的 Prompt'}
           placeholder={mode === 'communication' ? '输入你的消息...' : '输入你的 Prompt...'}
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -556,7 +610,12 @@ function TrialActiveView({
           <button className="btn btn-primary" onClick={handleSend} disabled={!input.trim() || submitting || state.pendingRequestId !== null}>
             发送
           </button>
-          <button className="btn btn-ghost" onClick={onFinish} disabled={state.roundsUsed === 0}>结束并评估</button>
+          {state.pendingRequestId !== null && (
+            <button className="btn btn-ghost" onClick={onCancel}>
+              取消
+            </button>
+          )}
+          <button className="btn btn-ghost" onClick={onFinish} disabled={state.roundsUsed === 0 || state.pendingRequestId !== null}>结束并评估</button>
         </div>
       </div>
 

@@ -265,7 +265,8 @@ test.describe('AI 试炼场 · 完整流程', () => {
     }
 
     await expect(page.getByText('已达到你设定的轮数')).toBeVisible()
-    await expect(page.getByRole('button', { name: '发送' })).toBeDisabled()
+    // 达到上限自动进入评估，结果视图不再提供继续发送的入口
+    await expect(page.getByRole('button', { name: '发送' })).toHaveCount(0)
   })
 
   test('历史记录可刷新后保留、导出与删除', async ({ page }) => {
@@ -284,7 +285,7 @@ test.describe('AI 试炼场 · 完整流程', () => {
 
     // 刷新后历史仍在（IndexedDB 持久化）
     await page.reload()
-    await page.getByRole('button', { name: '试炼历史' }).click()
+    await page.getByRole('button', { name: '查看本地历史' }).click()
     await expect(page.getByText('gpt-4o-mini')).toBeVisible()
     await expect(
       page.getByText('完整对话只保存在当前浏览器 IndexedDB，最近 20 次或 25 MB，达到上限自动清理最旧记录。'),

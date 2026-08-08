@@ -1,5 +1,5 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { AppDataProvider } from '@/lib/settings/AppDataContext'
@@ -224,5 +224,99 @@ describe('AI 试炼场页面 · 注入非空题池', () => {
   it('披露完整对话保存在本地 IndexedDB 及其配额', () => {
     renderPage()
     expect(screen.getByText(/只在本次页面内存中使用，不会保存/)).toBeInTheDocument()
+  })
+})
+
+describe('AI 试炼场页面 · 试炼交互（取消与轮数）', () => {
+  beforeEach(() => {
+    mockPool = [CHALLENGE]
+  })
+
+  async function startTrial(user: ReturnType<typeof userEvent.setup>) {
+    await fillCredentials(user)
+    await user.click(consentBox())
+    await user.click(screen.getByRole('button', { name: '随机换一题' }))
+    await user.click(screen.getByRole('button', { name: '开始试炼' }))
+  }
+
+  it('输入框具有中文可访问名称「你的回应」', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockImplementation(() => new Promise(() => {}))
+    renderPage()
+    await startTrial(user)
+
+    expect(screen.getByLabelText('你的回应')).toBeInTheDocument()
+  })
+
+  it('请求挂起时显示取消按钮，且结束并评估被禁用', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockImplementation(() => new Promise(() => {}))
+    renderPage()
+    await startTrial(user)
+    await user.type(screen.getByLabelText('你的回应'), '一句正常的话。')
+    await user.click(screen.getByRole('button', { name: '发送' }))
+
+    expect(screen.getByRole('button', { name: '取消' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '结束并评估' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: '发送' })).toBeDisabled()
+  })
+
+  it('取消请求后不消耗轮数，且可重新发送', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockImplementation(
+      (_url: string, opts: { signal?: AbortSignal }) =>
+        new Promise((_resolve, reject) => {
+          opts.signal?.addEventListener('abort', () =>
+            reject(new DOMException('Aborted', 'AbortError')),
+          )
+        }),
+    )
+    renderPage()
+    await startTrial(user)
+    await user.type(screen.getByLabelText('你的回应'), '一句正常的话。')
+    await user.click(screen.getByRole('button', { name: '发送' }))
+    await user.click(screen.getByRole('button', { name: '取消' }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/第\s*0\s*\/\s*\d+\s*轮/)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: '发送' })).toBeEnabled()
+      expect(screen.queryByRole('button', { name: '取消' })).not.toBeInTheDocument()
+    })
+    // 未消费轮数的同时没有新增任何消息以外的状态残留
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('达到轮数上限后自动进入评估并显示已达到你设定的轮数', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        text: '这是一句正常的模型回应。',
+        finishReason: 'stop',
+        usage: { inputTokens: 1, outputTokens: 1 },
+      }),
+    } as Response)
+    renderPage()
+    await fillCredentials(user)
+    await user.click(consentBox())
+    await user.click(screen.getByRole('button', { name: '随机换一题' }))
+    // 把轮数上限调到下限 5，发送 5 轮触发自动结束
+    fireEvent.change(screen.getByLabelText(/最大轮数/), { target: { value: '5' } })
+    await user.click(screen.getByRole('button', { name: '开始试炼' }))
+
+    for (let i = 0; i < 5; i += 1) {
+      await user.type(screen.getByLabelText('你的回应'), `第 ${i + 1} 条正常回应。`)
+      await user.click(screen.getByRole('button', { name: '发送' }))
+      await waitFor(() => {
+        expect(screen.getByText(new RegExp(`第\\s*${i + 1}\\s*/\\s*5\\s*轮`))).toBeInTheDocument()
+      })
+    }
+
+    await waitFor(() => {
+      expect(screen.getByText('已达到你设定的轮数')).toBeInTheDocument()
+    })
+    // 结果视图不再提供继续发送的入口
+    expect(screen.queryByRole('button', { name: '发送' })).not.toBeInTheDocument()
   })
 })
