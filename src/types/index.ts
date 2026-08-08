@@ -269,4 +269,72 @@ export interface StoredData {
   progress: ProgressRecord[]
   favorites: string[]
   reflections: Reflection[]
+  trialSummaries?: TrialSummary[]
+}
+
+// ─── AI 试炼场 ───────────────────────────────────────────────
+
+export type TrialMode = 'communication' | 'promptcraft'
+
+export type TrialDifficulty = 'simple' | 'normal' | 'hard'
+
+export type ApiProtocol = 'openai-compatible' | 'anthropic' | 'gemini'
+
+export type TrialRoundLimit = number
+
+export type TrialHardCheck =
+  | { type: 'nonEmpty' }
+  | { type: 'jsonObject'; requiredKeys: string[] }
+  | { type: 'containsAll'; values: string[]; caseSensitive: boolean }
+  | { type: 'maxChars'; max: number }
+  | { type: 'safeCommunication' }
+
+export interface TrialMessage {
+  role: 'user' | 'assistant'
+  content: string
+  createdAt: string
+}
+
+export interface TrialChallenge {
+  id: string
+  reviewStatus: ContentReviewStatus
+  mode: TrialMode
+  difficulty: TrialDifficulty
+  title: string
+  brief: string
+  objective: string
+  initialPrompt: string
+  testInput?: string
+  acceptanceCriteria: string[]
+  hardChecks: TrialHardCheck[]
+}
+
+export interface TrialSummary {
+  id: string
+  challengeId: string
+  mode: TrialMode
+  difficulty: TrialDifficulty
+  protocol: ApiProtocol
+  model: string
+  roundLimit: number
+  roundsUsed: number
+  hardScore: number
+  selfScore: number | null
+  completedAt: string
+}
+
+export interface TrialSessionRecord extends TrialSummary {
+  upstreamHost: string
+  challengeSnapshot: Omit<TrialChallenge, 'reviewStatus'>
+  messages: TrialMessage[]
+  hardCheckResults: Array<{ type: TrialHardCheck['type']; passed: boolean; explanation: string }>
+  evaluation: TrialEvaluation | null
+}
+
+export interface TrialEvaluation {
+  score: number
+  strengths: string[]
+  weaknesses: string[]
+  nextAction: string
+  disclaimer: 'model-self-evaluation'
 }

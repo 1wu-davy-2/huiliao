@@ -8,6 +8,7 @@ import HomePage from '@/features/home/HomePage'
 import PracticePage from '@/features/practice/PracticePage'
 import ScenarioPage from '@/features/practice/ScenarioPage'
 import MessageLabPage from '@/features/lab/MessageLabPage'
+import AiTrialPage from '@/features/lab/AiTrialPage'
 import ProgressPage from '@/features/progress/ProgressPage'
 import SettingsPage from '@/features/settings/SettingsPage'
 import PrivacyPage from '@/features/privacy/PrivacyPage'
@@ -21,6 +22,8 @@ function StorageRecoveryPage() {
     clearCorruptStorage,
   } = useAppData()
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [clearing, setClearing] = useState(false)
+  const [clearError, setClearError] = useState<string | null>(null)
 
   if (!storageRecovery) return null
 
@@ -94,6 +97,11 @@ function StorageRecoveryPage() {
 
       <Modal open={confirmOpen} title="确认清除无法读取的数据" onClose={() => setConfirmOpen(false)}>
         <p>清除后，当前站点下的原始本地数据将无法由本应用恢复。已下载的备份文件不会被删除。</p>
+        {clearError !== null && (
+          <p className="form-error" role="alert">
+            {clearError}
+          </p>
+        )}
         <div className="row mt-24" style={{ justifyContent: 'flex-end' }}>
           <button type="button" className="btn btn-ghost" onClick={() => setConfirmOpen(false)}>
             取消
@@ -101,12 +109,21 @@ function StorageRecoveryPage() {
           <button
             type="button"
             className="btn btn-danger"
-            onClick={() => {
-              clearCorruptStorage()
-              setConfirmOpen(false)
+            disabled={clearing}
+            onClick={async () => {
+              setClearError(null)
+              setClearing(true)
+              try {
+                await clearCorruptStorage()
+              } catch {
+                // 两个存储都未确认清空时不谎报成功，保持确认框可见供重试
+                setClearError('清除未完成：本地对话记录无法删除，数据未改动。请重试。')
+              } finally {
+                setClearing(false)
+              }
             }}
           >
-            确认清除
+            {clearing ? '清除中…' : '确认清除'}
           </button>
         </div>
       </Modal>
@@ -143,6 +160,7 @@ export default function App() {
         <Route path="/practice" element={<PracticePage />} />
         <Route path="/practice/:id" element={<ScenarioPage />} />
         <Route path="/lab" element={<MessageLabPage />} />
+        <Route path="/lab/ai" element={<AiTrialPage />} />
         <Route path="/progress" element={<ProgressPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />

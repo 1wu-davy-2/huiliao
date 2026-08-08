@@ -2,13 +2,15 @@ import type {
   ProgressRecord,
   Reflection,
   StoredData,
+  TrialSummary,
   UserSettings,
 } from '@/types'
 import { progressRecordSchema, storedDataSchema, settingsSchema } from '@/schemas'
+import { trialSummarySchema } from '@/schemas/ai-trials'
 import { DEFAULT_SETTINGS } from '@/lib/settings/defaults'
 
 export const STORAGE_NAMESPACE = 'huiliao:v1'
-export const SCHEMA_VERSION = 1
+export const SCHEMA_VERSION = 2
 
 export type StorageRecoveryReason =
   | 'unreadable-data'
@@ -42,6 +44,7 @@ export function createFallbackData(): StoredData {
     progress: [],
     favorites: [],
     reflections: [],
+    trialSummaries: [],
   }
 }
 
@@ -49,14 +52,23 @@ function resolveStorage(storage?: Storage): Storage {
   return storage ?? window.localStorage
 }
 
+/** 从原始串中读取 schemaVersion；无法解析返回 null。 */
+function getRawVersion(raw: string): number | null {
+  try {
+    const envelope = JSON.parse(raw)
+    if (typeof envelope?.schemaVersion === 'number') return envelope.schemaVersion
+    return null
+  } catch {
+    return null
+  }
+}
+
 export function loadStoredDataWithStatus(storage?: Storage): StoredDataLoadResult {
   const fallback = createFallbackData()
-  let target: Storage
-  let raw: string | null
+  let raw: string | null = null
 
   try {
-    target = resolveStorage(storage)
-    raw = target.getItem(STORAGE_NAMESPACE)
+    raw = resolveStorage(storage).getItem(STORAGE_NAMESPACE)
   } catch {
     return {
       data: fallback,
@@ -67,24 +79,41 @@ export function loadStoredDataWithStatus(storage?: Storage): StoredDataLoadResul
   if (raw === null) return { data: fallback, recovery: null }
 
   try {
-    const decoded: unknown = JSON.parse(raw)
-    if (
-      typeof decoded !== 'object' ||
-      decoded === null ||
-      !Number.isInteger((decoded as { schemaVersion?: unknown }).schemaVersion)
-    ) {
-      throw new Error('缺少有效 schemaVersion')
-    }
-
-    const version = (decoded as { schemaVersion: number }).schemaVersion
-    if (version !== SCHEMA_VERSION) {
+    const rawVersion = getRawVersion(raw)
+    if (rawVersion !== null && rawVersion !== SCHEMA_VERSION) {
+      if (rawVersion === 1) {
+        // v1→v2 迁移：v1 无 trialSummaries 字段，就地补上，不换存储键
+        const v1 = JSON.parse(raw)
+        const migrated: StoredData = {
+          schemaVersion: SCHEMA_VERSION,
+          settings: { ...DEFAULT_SETTINGS, ...v1.settings },
+          progress: Array.isArray(v1.progress) ? v1.progress : [],
+          favorites: Array.isArray(v1.favorites) ? v1.favorites : [],
+          reflections: Array.isArray(v1.reflections) ? v1.reflections : [],
+          trialSummaries: [],
+        }
+        return { data: migrated, recovery: null }
+      }
+      // 未来版本：只读恢复流程，不被当前版本降级覆盖
       return {
         data: fallback,
         recovery: { rawData: raw, reason: 'unsupported-version' },
       }
     }
 
-    return { data: storedDataSchema.parse(decoded), recovery: null }
+    // 尝试用当前 schema 解析（兼容同版本不同字段的合法数据）
+    const parsed = storedDataSchema.safeParse(JSON.parse(raw))
+    if (parsed.success) {
+      return {
+        data: {
+          ...parsed.data,
+          schemaVersion: SCHEMA_VERSION,
+          trialSummaries: parsed.data.trialSummaries ?? [],
+        },
+        recovery: null,
+      }
+    }
+    throw new Error('schema mismatch')
   } catch {
     return {
       data: fallback,
@@ -93,15 +122,19 @@ export function loadStoredDataWithStatus(storage?: Storage): StoredDataLoadResul
   }
 }
 
+export function loadStoredData(storage?: Storage): StoredData {
+  return loadStoredDataWithStatus(storage).data
+}
+
+/** 写操作统一入口：恢复态（含运行期间损坏）下任何写入都必须停止并抛出。 */
 function loadWritableData(storage?: Storage): StoredData {
   const result = loadStoredDataWithStatus(storage)
   if (result.recovery) throw new StorageRecoveryRequiredError(result.recovery)
   return result.data
 }
 
-function saveStoredData(data: StoredData, storage?: Storage): void {
+export function saveStoredData(data: StoredData, storage?: Storage): void {
   let rawData: string | null = null
-
   try {
     const target = resolveStorage(storage)
     rawData = target.getItem(STORAGE_NAMESPACE)
@@ -116,6 +149,57 @@ function saveStoredData(data: StoredData, storage?: Storage): void {
       reason: 'storage-unavailable',
     })
   }
+}
+
+export function addTrialSummary(
+  summary: TrialSummary,
+  storage?: Storage,
+): StoredData {
+  const data = loadWritableData(storage)
+  const summaries = data.trialSummaries ?? []
+  const parsed = trialSummarySchema.parse(summary)
+  // 替换同 ID 或插入
+  const idx = summaries.findIndex((s) => s.id === parsed.id)
+  if (idx >= 0) {
+    summaries[idx] = parsed
+  } else {
+    summaries.unshift(parsed)
+  }
+  // 最多 20 条
+  data.trialSummaries = summaries.slice(0, 20)
+  saveStoredData(data, storage)
+  return data
+}
+
+export function removeTrialSummary(
+  id: string,
+  storage?: Storage,
+): StoredData {
+  const data = loadWritableData(storage)
+  data.trialSummaries = (data.trialSummaries ?? []).filter((s) => s.id !== id)
+  saveStoredData(data, storage)
+  return data
+}
+
+export function clearTrialSummaries(storage?: Storage): StoredData {
+  const data = loadWritableData(storage)
+  data.trialSummaries = []
+  saveStoredData(data, storage)
+  return data
+}
+
+/**
+ * 根据 IndexedDB 中的实际记录重建 localStorage 摘要列表。
+ * 在 localStorage 写入失败后，下次加载历史时调用。
+ */
+export function reconcileTrialSummaries(
+  dbIds: string[],
+  storage?: Storage,
+): StoredData {
+  const data = loadWritableData(storage)
+  data.trialSummaries = (data.trialSummaries ?? []).filter((s) => dbIds.includes(s.id))
+  saveStoredData(data, storage)
+  return data
 }
 
 export function updateSettings(

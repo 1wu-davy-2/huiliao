@@ -11,7 +11,7 @@
 [![React 18](https://img.shields.io/badge/React-18-217a70)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Strict-165e57)](https://www.typescriptlang.org)
 [![Vite 5](https://img.shields.io/badge/Vite-5-747bff)](https://vitejs.dev)
-[![Vitest](https://img.shields.io/badge/Vitest-166%20tests-2f7d4d)](https://vitest.dev)
+[![Vitest](https://img.shields.io/badge/Vitest-541%20tests-2f7d4d)](https://vitest.dev)
 [![Local-First](https://img.shields.io/badge/Data-Local%20First-b78324)]()
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-red)](LICENSE)
 
@@ -94,13 +94,18 @@
   ├── 安全规则层     normalize + 意图检测组合：未成年/醉酒/无视停止/隐私侵犯/权力差
   │                  教育性提问不绕过同句执行意图；路径级校验阻止越界路径到达正向结局
   ├── 诊断层         analyzeMessage 纯函数：五维评分、三类结果（ok / caution / blocked）
-  └── 存储层         localStorage（huiliao:v1，带版本校验与恢复）——草稿与自由输入不持久化
+  └── 存储层         localStorage（huiliao:v1，带版本校验与恢复）+ IndexedDB（试炼完整对话）
+                     ——草稿、自由输入与 API Key 不持久化
 
-Vercel CDN（纯静态）
-  └── vercel.json    SPA rewrite · CSP/安全响应头 · assets 一年 immutable 缓存
+Vercel（静态资源 + 同源中转函数）
+  ├── vercel.json    SPA rewrite · CSP/安全响应头 · assets 一年 immutable 缓存
+  └── api/ai/*       AI 试炼场中转：HTTPS-only · DNS 解析后钉定公网地址 · 私网/环回拒绝
+                     · 禁重定向 · 协议↔预设绑定 · 题目审核门 · 25s / 1MB 上界
 ```
 
-**训练内容不上传任何服务器。** 应用没有后端、数据库、账号或云同步；托管平台仅为提供静态文件处理基础请求元数据（详见[隐私与边界手册](#隐私承诺)）。
+**除 AI 试炼场外，训练内容不上传任何服务器。** 消息实验室草稿、情境模拟自由输入与复盘全部在浏览器本地处理；应用没有账号、云同步或服务器端对话存储。
+
+**AI 试炼场是唯一例外。** 勾选同意后，你的输入与模型回复会经本站同源中转函数（`/api/ai/*`）发往你自己配置的模型服务。API Key 只存在于页面内存与该次请求中，不写入任何存储，也不进入导出文件（详见[隐私承诺](#隐私承诺)）。
 
 ---
 
@@ -135,7 +140,9 @@ Vercel CDN（纯静态）
 
 ## 隐私承诺
 
-- **训练内容数据**：消息实验室草稿、模拟对话自由输入、复盘不上传任何服务器；应用无 Function、数据库或云同步。
+- **训练内容数据**：消息实验室草稿、模拟对话自由输入、复盘不上传任何服务器。**AI 试炼场例外**：勾选同意后，输入与模型回复经同源中转函数发往你配置的模型服务；结束后的模型自评会额外调用一次，消耗你的 Token 或余额。
+- **API Key**：只存在于页面内存与该次请求的专用请求头中，不写入 localStorage、IndexedDB、URL、日志或导出文件。切换协议或目标主机会立即清空已填密钥与同意勾选。请使用可随时撤销的最小权限密钥——浏览器扩展、开发者工具与中转运行环境仍可能观察到它。
+- **试炼对话**：完整对话只保存在当前浏览器的 IndexedDB（最近 20 次或 25 MB，达上限自动清理最旧记录），不进入应用导出 JSON；支持按次导出、按次删除与一键清空。
 - **本地数据**：设置、进度、收藏、复盘仅保存在当前域名浏览器的 `localStorage`（`huiliao:v1`），按域名隔离；草稿与自由输入不持久化。
 - **基础设施请求数据**：托管平台（Vercel）为提供静态文件会处理基础请求元数据（IP、User-Agent、请求路径等），按其[隐私政策](https://vercel.com/legal/privacy-notice)处理；项目默认不开启 Web Analytics 与 Speed Insights。
 - **数据控制**：支持导出结构化 JSON 与一键清除；本地数据无法解析时先提供原始备份下载，不静默覆盖。
@@ -149,8 +156,8 @@ Vercel CDN（纯静态）
 |------|------|
 | 前端 | React 18 · TypeScript（严格模式）· Vite 5 · React Router 6 |
 | 数据契约 | Zod（场景图、隐私主题、存储 schema 运行时校验） |
-| 样式 | 原生 CSS + 设计令牌（暖白/深墨/青绿/珊瑚/金） |
-| 测试 | Vitest + React Testing Library（166 用例）· Playwright（环境恢复后运行） |
+| 样式 | 原生 CSS + 设计令牌（米白/深墨/鼠尾草绿/砖红/金）· 自托管 OFL 字体（Hanken Grotesk / Be Vietnam Pro / Work Sans） |
+| 测试 | Vitest + React Testing Library（541 用例）· Playwright（31 通过 / 8 因空题池发布门预期跳过，2026-08-08 实测） |
 | 部署 | Vercel 纯静态 · Node 22 · `verify:deploy` 构建链 |
 
 ### 本地开发
@@ -158,7 +165,7 @@ Vercel CDN（纯静态）
 ```bash
 npm ci
 npm run dev          # http://localhost:5173
-npm run verify:deploy  # lint + 166 测试 + 构建 + 产物校验（部署前全量）
+npm run verify:deploy  # lint + 159 测试 + 构建 + 产物校验（部署前全量）
 ```
 
 ### Vercel 部署
@@ -179,7 +186,6 @@ npm run verify:deploy  # lint + 166 测试 + 构建 + 产物校验（部署前�
 | [修复与隐私内容扩展实施计划](./docs/REMEDIATION_AND_PRIVACY_EXPANSION_PLAN.md) | 安全分类器、路径校验、隐私体系、绿黄红信号 |
 | [部署架构修改确认计划](./docs/项目部署架构修改确认计划.md) | Vercel 适配、Preview 验收、发布流程 |
 | [验收报告](./docs/ACCEPTANCE_REPORT.md) | 测试、安全回归、路径验证、部署与审校状态 |
-| [2026-08-07 会话工作记录](./docs/SESSION_REPORT_2026-08-07.md) | 本轮请求、实施改动、验证结果、GitHub 状态与剩余事项 |
 | [无 Playwright 测试方案](./docs/TESTING_WITHOUT_PLAYWRIGHT.md) | 环境受限时的验收组合 |
 
 ---
@@ -197,6 +203,20 @@ npm run verify:deploy  # lint + 166 测试 + 构建 + 产物校验（部署前�
 任何试图以闭源方式使用本项目（包括内部部署为服务）的行为，均违反本许可证。
 
 > 本许可证不构成法律建议。分发或商用前请自行咨询具备资质的法律专业人士。
+
+### 第三方资产
+
+界面字体为**自托管**（CSP `font-src 'self'` 不允许远程字体源），随构建产物一同分发，均以 **SIL Open Font License 1.1** 授权：
+
+| 字体 | 用途 | 版权 |
+|------|------|------|
+| [Hanken Grotesk](https://github.com/marcologous/hanken-grotesk) | 大标题 | Copyright 2021 The Hanken Grotesk Project Authors |
+| [Be Vietnam Pro](https://github.com/bettergui/BeVietnamPro) | 正文 | Copyright 2021 The Be Vietnam Pro Project Authors |
+| [Work Sans](https://github.com/weiweihuanghuang/Work-Sans) | 小号大写标签 | Copyright 2019 The Work Sans Project Authors |
+
+OFL 要求随字体软件保留版权声明与许可证文本，因此完整文本随产物发布于 [`/licenses/fonts-OFL-1.1.txt`](./public/licenses/fonts-OFL-1.1.txt)，并由 `verify:deploy` 断言其存在。字体授权独立于本项目的 AGPL-3.0，不因一同分发而改变。
+
+图标为 [lucide-react](https://lucide.dev)（ISC）。角色头像与主图是 `scripts/generate-assets.mjs` 程序化生成的原创几何图形，不含任何真人照片或远程资源。
 
 ---
 

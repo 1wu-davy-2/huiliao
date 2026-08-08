@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { SCENARIOS } from '@/content'
+import { SCENARIOS_DRAFT } from '@/content/scenarios-draft'
+import { AI_TRIALS_DRAFT } from '@/content/ai-trials-draft'
 
 const ROOT = join(process.cwd())
 
@@ -88,5 +90,65 @@ describe('Vercel 部署配置', () => {
 
   it('主内容入口不含 draft 场景（draft 不进生产 bundle）', () => {
     expect(SCENARIOS.some((s) => s.reviewStatus === 'draft')).toBe(false)
+  })
+
+  it('verify-deploy 的草稿标记覆盖全部 draft 标题（s14–s18 与 18 道 AI 题）', () => {
+    const script = readFileSync(join(ROOT, 'scripts', 'verify-deploy.mjs'), 'utf8')
+    const block = script.match(/const DRAFT_MARKERS = \[([\s\S]*?)\]/)?.[1] ?? ''
+    const markers = [...block.matchAll(/'([^']+)'/g)].map((m) => m[1])
+
+    const draftTitles = [
+      ...SCENARIOS_DRAFT.map((s) => s.title),
+      ...AI_TRIALS_DRAFT.map((t) => t.title),
+    ]
+    expect(draftTitles.length).toBeGreaterThanOrEqual(23) // 5 场景 + 18 题
+    for (const title of draftTitles) {
+      expect(markers, `verify-deploy 缺少草稿标记: ${title}`).toContain(title)
+    }
+  })
+
+  it('index.html 引用了 favicon.svg 和 favicon.ico', () => {
+    const html = readFileSync(join(ROOT, 'index.html'), 'utf8')
+    expect(html).toContain('/favicon.svg')
+    expect(html).toContain('/favicon.ico')
+  })
+
+  it('public/favicon.ico 包含合法 ICO 魔数', () => {
+    const icoPath = join(ROOT, 'public', 'favicon.ico')
+    expect(existsSync(icoPath)).toBe(true)
+    const buf = readFileSync(icoPath)
+    expect(buf.length).toBeGreaterThanOrEqual(22)
+    expect(buf[0]).toBe(0)
+    expect(buf[1]).toBe(0)
+    expect(buf[2]).toBe(1)
+    expect(buf[3]).toBe(0)
+  })
+
+  it('public/apple-touch-icon.png 为 180×180 PNG', () => {
+    const pngPath = join(ROOT, 'public', 'apple-touch-icon.png')
+    expect(existsSync(pngPath)).toBe(true)
+    const buf = readFileSync(pngPath)
+    expect(buf.length).toBeGreaterThanOrEqual(29)
+    const width = buf.readUInt32BE(16)
+    const height = buf.readUInt32BE(20)
+    expect(width).toBe(180)
+    expect(height).toBe(180)
+  })
+
+  it('vercel.json 配置了 api/ai functions 且保留 SPA rewrite', () => {
+    const config = readJson('vercel.json') as VercelConfig & {
+      functions?: Record<string, { runtime?: string; maxDuration?: number }>
+    }
+    expect(config.functions).toBeDefined()
+    const fnKey = Object.keys(config.functions!).find((k) => k.startsWith('api/ai/'))
+    expect(fnKey).toBeDefined()
+    expect(config.functions![fnKey!].runtime).toContain('nodejs')
+    // CSP 不包含外部 connect-src
+    const pageHeaders = config.headers?.find((h) => h.source === '/(.*)')?.headers ?? []
+    const csp = pageHeaders.find((h) => h.key === 'Content-Security-Policy')?.value ?? ''
+    expect(csp).toContain("connect-src 'self'")
+    // 保留 catch-all SPA rewrite
+    const catchAll = config.rewrites?.find((r) => r.source === '/(.*)')
+    expect(catchAll).toBeDefined()
   })
 })

@@ -1,19 +1,23 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import type { ProgressRecord, Reflection, StoredData, UserSettings } from '@/types'
+import type { ProgressRecord, Reflection, StoredData, TrialSummary, UserSettings } from '@/types'
 import {
   addProgressRecord,
   addReflection,
+  addTrialSummary,
   clearStoredData,
   createFallbackData,
   exportStoredData,
   loadStoredDataWithStatus,
+  reconcileTrialSummaries,
   removeReflection,
+  removeTrialSummary,
   STORAGE_NAMESPACE,
   StorageRecoveryRequiredError,
   toggleFavorite as persistFavorite,
   updateSettings,
   type StorageRecovery,
 } from '@/lib/storage/storage'
+import { clearTrialSessions } from '@/lib/ai/trialDb'
 
 interface AppDataContextValue {
   data: StoredData
@@ -23,12 +27,15 @@ interface AppDataContextValue {
   deleteReflection: (id: string) => boolean
   toggleFavorite: (scenarioId: string) => boolean
   exportData: () => string | null
-  clearAll: () => boolean
+  clearAll: () => Promise<void>
   resetSettings: () => boolean
   storageRecovery: StorageRecovery | null
   storageRecoveryError: string | null
   retryStorage: () => boolean
-  clearCorruptStorage: () => boolean
+  clearCorruptStorage: () => Promise<void>
+  saveTrialSummary: (summary: TrialSummary) => void
+  removeTrialSummary: (id: string) => void
+  reconcileSummaries: (dbIds: string[]) => void
 }
 
 const AppDataContext = createContext<AppDataContextValue | null>(null)
@@ -117,16 +124,18 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     }
   }, [enterRecovery])
 
-  const handleClearAll = useCallback((): boolean => {
+  const handleClearAll = useCallback(async () => {
+    // 记录优先：先清 IndexedDB 完整对话，成功后再清 localStorage 信封。
+    // IndexedDB 失败时向上抛出，由调用方显示错误；localStorage 保持原样以便重试，
+    // 不声称清除成功。
+    await clearTrialSessions()
     try {
       clearStoredData()
       setStorageRecovery(null)
+      setStorageRecoveryError(null)
       setData(createFallbackData())
-      return true
     } catch (error) {
-      if (enterRecovery(error, '清除失败，原数据未被删除。请检查存储权限后重试读取。')) {
-        return false
-      }
+      if (enterRecovery(error, '清除失败，原数据未被删除。请检查存储权限后重试读取。')) return
       throw error
     }
   }, [enterRecovery])
@@ -143,16 +152,16 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     [runMutation],
   )
 
-  const handleClearCorruptStorage = useCallback((): boolean => {
+  const handleClearCorruptStorage = useCallback(async () => {
+    // 与全局清除同序：IndexedDB 优先，失败则抛出且不动 localStorage 原值
+    await clearTrialSessions()
     try {
       clearStoredData()
       setStorageRecovery(null)
+      setStorageRecoveryError(null)
       setData(createFallbackData())
-      return true
     } catch (error) {
-      if (enterRecovery(error, '清除失败，原数据未被删除。请检查存储权限后重试读取。')) {
-        return false
-      }
+      if (enterRecovery(error, '清除失败，原数据未被删除。请检查存储权限后重试读取。')) return
       throw error
     }
   }, [enterRecovery])
@@ -173,6 +182,27 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     return true
   }, [])
 
+  const handleSaveTrialSummary = useCallback(
+    (summary: TrialSummary) => {
+      runMutation(() => addTrialSummary(summary))
+    },
+    [runMutation],
+  )
+
+  const handleRemoveTrialSummary = useCallback(
+    (id: string) => {
+      runMutation(() => removeTrialSummary(id))
+    },
+    [runMutation],
+  )
+
+  const handleReconcileSummaries = useCallback(
+    (dbIds: string[]) => {
+      runMutation(() => reconcileTrialSummaries(dbIds))
+    },
+    [runMutation],
+  )
+
   const value = useMemo(
     () => ({
       data,
@@ -188,6 +218,9 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       storageRecoveryError,
       retryStorage: handleRetryStorage,
       clearCorruptStorage: handleClearCorruptStorage,
+      saveTrialSummary: handleSaveTrialSummary,
+      removeTrialSummary: handleRemoveTrialSummary,
+      reconcileSummaries: handleReconcileSummaries,
     }),
     [
       data,
@@ -203,6 +236,9 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       storageRecoveryError,
       handleRetryStorage,
       handleClearCorruptStorage,
+      handleSaveTrialSummary,
+      handleRemoveTrialSummary,
+      handleReconcileSummaries,
     ],
   )
 

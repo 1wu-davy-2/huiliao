@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test'
 
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => {
+  await page.goto('/onboarding')
+  await page.evaluate(() => {
     localStorage.setItem(
       'huiliao:v1',
       JSON.stringify({
@@ -43,12 +44,12 @@ test('完成一个三节点场景、重试一次并保存复盘', async ({ page 
 
   // 结局视图
   await expect(page.getByText('练习结束')).toBeVisible()
-  await expect(page.getByText('边界检查通过')).toBeVisible()
+  await expect(page.getByText('边界检查通过', { exact: true })).toBeVisible()
 
   // 保存私密复盘
   await page.getByPlaceholder(/写下这次练习中你注意到的/).fill('今天注意到自己提问太多，下次多分享。')
   await page.getByRole('button', { name: '保存复盘' }).click()
-  await expect(page.getByText('已保存')).toBeVisible()
+  await expect(page.getByRole('status')).toContainText('已保存在本浏览器')
 
   // 完成记录与复盘出现在首页
   await page.goto('/')
@@ -57,7 +58,8 @@ test('完成一个三节点场景、重试一次并保存复盘', async ({ page 
 
   // 进度页有完成记录与边界正确率
   await page.goto('/progress')
-  await expect(page.getByText('边界判断')).toBeVisible()
-  await expect(page.getByText('100%')).toBeVisible()
-  await expect(page.getByText('边界通过')).toBeVisible()
+  const boundarySection = page.getByRole('region', { name: '边界判断' })
+  await expect(boundarySection.getByRole('heading', { name: '边界判断' })).toBeVisible()
+  await expect(boundarySection.getByText('100%', { exact: true })).toBeVisible()
+  await expect(page.getByText('边界通过', { exact: true })).toBeVisible()
 })

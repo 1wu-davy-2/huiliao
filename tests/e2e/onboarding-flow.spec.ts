@@ -30,7 +30,7 @@ test('新用户完成首次设置并进入推荐练习', async ({ page }) => {
 
   // 完成设置后进入首页工作台
   await expect(page).toHaveURL(/\/$/)
-  await expect(page.getByRole('heading', { name: /今天想练点什么/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /今天练哪一场/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /继续练习/ })).toBeVisible()
 
   // 推荐场景为针对“不知道怎么开口”的 s02

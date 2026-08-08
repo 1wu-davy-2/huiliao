@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>沟通训练 - 会聊</title>
+<!-- Google Fonts & Material Symbols -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&amp;family=Hanken+Grotesk:wght@400;500;600;700&amp;family=Work+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "inverse-primary": "#a1d39c",
+                      "primary-container": "#7faf7b",
+                      "on-secondary-container": "#56656d",
+                      "on-tertiary-container": "#2b3c45",
+                      "surface-bright": "#fcf9f8",
+                      "secondary": "#526168",
+                      "on-primary": "#ffffff",
+                      "primary": "#3c683b",
+                      "tertiary-container": "#94a6b1",
+                      "on-background": "#1c1b1b",
+                      "on-tertiary-fixed-variant": "#384952",
+                      "secondary-fixed-dim": "#b9c9d2",
+                      "outline-variant": "#c2c9bd",
+                      "secondary-fixed": "#d5e5ee",
+                      "on-secondary-fixed": "#0f1d24",
+                      "primary-fixed": "#bdf0b6",
+                      "on-primary-container": "#164219",
+                      "primary-fixed-dim": "#a1d39c",
+                      "outline": "#72796f",
+                      "tertiary-fixed": "#d3e5f1",
+                      "background": "#fcf9f8",
+                      "on-primary-fixed-variant": "#245026",
+                      "surface-container-lowest": "#ffffff",
+                      "on-error-container": "#93000a",
+                      "inverse-surface": "#313030",
+                      "surface-container-high": "#eae7e7",
+                      "on-primary-fixed": "#002205",
+                      "surface-tint": "#3c683b",
+                      "surface-variant": "#e5e2e1",
+                      "on-secondary-fixed-variant": "#3a4950",
+                      "on-secondary": "#ffffff",
+                      "error-container": "#ffdad6",
+                      "on-tertiary": "#ffffff",
+                      "secondary-container": "#d2e2eb",
+                      "inverse-on-surface": "#f3f0ef",
+                      "surface": "#fcf9f8",
+                      "on-surface-variant": "#42493f",
+                      "on-surface": "#1c1b1b",
+                      "surface-container-highest": "#e5e2e1",
+                      "surface-container": "#f0eded",
+                      "tertiary": "#50616b",
+                      "surface-container-low": "#f6f3f2",
+                      "surface-dim": "#dcd9d9",
+                      "error": "#ba1a1a",
+                      "tertiary-fixed-dim": "#b7c9d4",
+                      "on-tertiary-fixed": "#0c1e26",
+                      "on-error": "#ffffff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "gutter": "32px",
+                      "side_info_width": "320px",
+                      "nav_width": "240px",
+                      "container_max_width": "1440px",
+                      "unit": "8px",
+                      "section_margin": "64px"
+              },
+              "fontFamily": {
+                      "label-md": [
+                              "Work Sans"
+                      ],
+                      "body-md": [
+                              "Be Vietnam Pro"
+                      ],
+                      "body-lg": [
+                              "Be Vietnam Pro"
+                      ],
+                      "headline-lg": [
+                              "Hanken Grotesk"
+                      ],
+                      "display-lg": [
+                              "Hanken Grotesk"
+                      ],
+                      "headline-md": [
+                              "Hanken Grotesk"
+                      ]
+              },
+              "fontSize": {
+                      "label-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "1",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "1.3",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "fontWeight": "500"
+                              }
+                      ]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        /* Custom Scrollbar for chat and side panels to maintain clean look */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #E5E5E3;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #dcd9d9;
+        }
+        
+        /* Layout Structure */
+        body {
+            background-color: #F7F7F5; /* Enforced custom background from prompt */
+            color: #1c1b1b;
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md overflow-hidden bg-[#F7F7F5]">
+<!-- Shell Container -->
+<div class="flex h-screen w-full">
+<!-- SideNavBar (Web Only) -->
+<nav class="hidden md:flex flex-col h-screen py-gutter px-6 w-nav_width fixed left-0 top-0 border-r border-outline-variant bg-background z-40">
+<!-- Brand -->
+<div class="mb-12 flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container" style="font-variation-settings: 'FILL' 1;">psychiatry</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md text-primary tracking-tight">会聊</h1>
+<p class="font-label-md text-label-md text-secondary mt-1 opacity-70">Restrained Growth</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<ul class="flex flex-col gap-2 flex-grow">
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-body-md text-body-md">首页</span>
+</a>
+</li>
+<li>
+<!-- Active State: 训练中心 matches Intent -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary font-bold bg-surface-container-low border-l-2 border-primary transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">exercise</span>
+<span class="font-body-md text-body-md">训练中心</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-md text-body-md">设置</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">insights</span>
+<span class="font-body-md text-body-md">进度统计</span>
+</a>
+</li>
+</ul>
+<!-- CTA -->
+<div class="mt-auto mb-6">
+<button class="w-full flex items-center justify-center gap-2 bg-primary text-on-primary py-3 rounded-full font-label-md text-label-md hover:bg-on-primary-container transition-colors shadow-sm scale-95 hover:scale-100 duration-200">
+<span class="material-symbols-outlined" style="font-size: 18px;">add</span>
+                    开始新对话
+                </button>
+</div>
+<!-- Footer Tab -->
+<ul class="border-t border-outline-variant pt-4">
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-body-md text-body-md">退出</span>
+</a>
+</li>
+</ul>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-nav_width flex flex-col h-screen relative">
+<!-- TopAppBar (Web Only) -->
+<header class="hidden md:flex justify-between items-center h-16 px-gutter border-b border-outline-variant bg-[#F7F7F5] z-30 flex-shrink-0">
+<div class="flex items-center gap-6">
+<div class="font-headline-md text-headline-md text-primary font-bold">沟通训练</div>
+<div class="h-4 w-px bg-outline-variant"></div>
+<nav class="flex gap-6">
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">训练记录</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-body-md text-body-md" href="#">技能概览</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-secondary hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant hover:border-primary transition-colors">
+<img class="w-full h-full object-cover" data-alt="A close-up portrait of a professional adult user in a soft, bright environment, wearing subtle minimalist clothing. High-key lighting, soft white background, calm and professional mood. Realism, modern aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAa-6OlFoEnh6spa9JqZpxm8LT4JQRo36EGBBw2ReCZZF42XDCwxPkdKljrA7LVFbyBG5BefpMUSN7MKIPv4_lS0B9MRimOFnpXgTSKO5IQU9smfDne54LzyLflX6h7qczfw2PUU2whq2_9VMiayWfKdL5Se7kvz9NO6lg9R0DlqPn_4I05QnW89um-hKghdjjrGQCoCgo0oZEtCKdlXbw1YTGhJX_j1pUUnlfieIquUFJpfzQFC9qXSQ"/>
+</button>
+</div>
+</header>
+<!-- 3-Column Layout Container -->
+<div class="flex-1 flex overflow-hidden">
+<!-- Left Column (30%): 训练目标 (Training Goals) -->
+<aside class="w-[30%] min-w-[280px] max-w-[360px] border-r border-outline-variant bg-[#F7F7F5] p-gutter overflow-y-auto hidden lg:flex flex-col">
+<div class="mb-8">
+<h2 class="font-headline-md text-headline-md text-on-background mb-2">训练目标</h2>
+<p class="font-body-md text-body-md text-secondary">本节重点：情绪界限与非暴力沟通</p>
+</div>
+<div class="space-y-6 flex-grow">
+<!-- Goal 1 -->
+<div class="group">
+<div class="flex items-start gap-3">
+<div class="mt-1 w-5 h-5 rounded-full border-2 border-outline-variant flex items-center justify-center group-hover:border-primary transition-colors">
+<div class="w-2.5 h-2.5 rounded-full bg-transparent group-hover:bg-primary transition-colors"></div>
+</div>
+<div>
+<h3 class="font-body-lg text-body-lg font-medium text-on-surface">客观陈述事实</h3>
+<p class="font-body-md text-body-md text-secondary mt-1">避免使用"总是"、"从不"等绝对化词语，专注于当下发生的具体事件。</p>
+</div>
+</div>
+</div>
+<!-- Goal 2 (Active/Completed look) -->
+<div class="group">
+<div class="flex items-start gap-3">
+<div class="mt-1 w-5 h-5 rounded-full border-2 border-primary bg-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px] text-on-primary">check</span>
+</div>
+<div>
+<h3 class="font-body-lg text-body-lg font-medium text-on-surface line-through opacity-70">表达真实感受</h3>
+<p class="font-body-md text-body-md text-secondary mt-1 opacity-70">区分想法与感受，使用表示情绪的词汇，如"我感到挫败"。</p>
+</div>
+</div>
+</div>
+<!-- Goal 3 -->
+<div class="group">
+<div class="flex items-start gap-3">
+<div class="mt-1 w-5 h-5 rounded-full border-2 border-outline-variant flex items-center justify-center group-hover:border-primary transition-colors">
+</div>
+<div>
+<h3 class="font-body-lg text-body-lg font-medium text-on-surface">提出具体请求</h3>
+<p class="font-body-md text-body-md text-secondary mt-1">清晰地说明希望对方采取的具体行动，而非模糊的期待。</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Decorative / Context Image -->
+<div class="mt-8 rounded-xl overflow-hidden border border-outline-variant opacity-80 mix-blend-multiply">
+<img class="w-full h-32 object-cover" data-alt="A minimalist overhead shot of a clean, structured wooden desk. On the desk lies an open plain notebook with elegant sparse handwriting, a sleek matte black pen, and a subtle green indoor plant in the corner. Soft, diffused daylight, editorial aesthetic, high structural clarity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCtjEhMr86cHY7cNsswpQCGJxMbHD6fAshIOfr_yz9fiGMZVp_KzjO5rUMc6RDgczhW9L3rupcsmAvf1Ulxzb5WfTsIPc03S47n6huuC1RRvHPHNnFcz4nQ80n0CmcFBQpz7Th3Ukv8Fs6695WWOI9J05z_eFc5_r5phr2JnUOQGsH97XZK20r2SA_wCO-wBZMggATKzMd0nShonPqiR5VAw70Z1dfxV2I-E9vgJyKa0voZ33LrywvgdA"/>
+</div>
+</aside>
+<!-- Center Column (40%): 聊天区域 (Chat Area) -->
+<section class="flex-1 flex flex-col min-w-[320px] bg-white border-r border-outline-variant relative">
+<!-- Chat Header / Context -->
+<div class="px-6 py-4 border-b border-outline-variant bg-surface-bright flex justify-between items-center shadow-sm z-10">
+<div>
+<h3 class="font-body-lg text-body-lg font-medium">场景：处理工作冲突</h3>
+<p class="font-label-md text-label-md text-secondary mt-1">角色：项目同事 (AI模拟)</p>
+</div>
+<span class="px-3 py-1 bg-surface-container rounded-full font-label-md text-label-md text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">timer</span> 12:45
+                        </span>
+</div>
+<!-- Chat Messages Canvas -->
+<div class="flex-1 p-6 overflow-y-auto flex flex-col gap-6 bg-[#F7F7F5]">
+<!-- AI Message -->
+<div class="flex flex-col gap-1 items-start max-w-[85%]">
+<div class="flex items-center gap-2 ml-2">
+<div class="w-6 h-6 rounded-full bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px] text-on-secondary-container">smart_toy</span>
+</div>
+<span class="font-label-md text-label-md text-secondary">同事</span>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant px-5 py-3 rounded-2xl rounded-tl-none font-body-md text-body-md text-on-surface shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+                                这个项目进度又落后了，你负责的那部分为什么总是拖延？我们其他人都在等你。
+                            </div>
+</div>
+<!-- User Message -->
+<div class="flex flex-col gap-1 items-end max-w-[85%] self-end">
+<span class="font-label-md text-label-md text-secondary mr-2">你</span>
+<div class="bg-primary-container px-5 py-3 rounded-2xl rounded-tr-none font-body-md text-body-md text-on-primary-container shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+                                我没有总是拖延，上周的设计改了三次，这不是我的问题。你们不应该把责任都推给我。
+                            </div>
+</div>
+<!-- AI Response -->
+<div class="flex flex-col gap-1 items-start max-w-[85%]">
+<div class="flex items-center gap-2 ml-2">
+<div class="w-6 h-6 rounded-full bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px] text-on-secondary-container">smart_toy</span>
+</div>
+<span class="font-label-md text-label-md text-secondary">同事</span>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant px-5 py-3 rounded-2xl rounded-tl-none font-body-md text-body-md text-on-surface shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+                                我不是在推卸责任，但事实是我们现在卡住了。如果你早点说设计有变动，我们也许能调整计划。
+                            </div>
+</div>
+<!-- Typing Indicator -->
+<div class="flex flex-col gap-1 items-start max-w-[85%] opacity-50">
+<div class="bg-surface-container-lowest border border-outline-variant px-4 py-3 rounded-2xl rounded-tl-none flex gap-1 items-center h-[48px]">
+<div class="w-1.5 h-1.5 bg-secondary rounded-full animate-bounce" style="animation-delay: 0ms"></div>
+<div class="w-1.5 h-1.5 bg-secondary rounded-full animate-bounce" style="animation-delay: 150ms"></div>
+<div class="w-1.5 h-1.5 bg-secondary rounded-full animate-bounce" style="animation-delay: 300ms"></div>
+</div>
+</div>
+</div>
+<!-- Input Area -->
+<div class="p-4 bg-surface border-t border-outline-variant flex flex-col gap-3">
+<textarea class="w-full bg-surface-container-lowest border border-outline-variant rounded-xl p-4 font-body-md text-body-md text-on-surface placeholder:text-secondary focus:border-primary focus:ring-1 focus:ring-primary outline-none resize-none transition-all" placeholder="输入你的回复..." rows="3"></textarea>
+<div class="flex justify-between items-center">
+<button class="px-5 py-2 rounded-full border border-secondary text-secondary font-label-md text-label-md hover:bg-surface-container transition-colors active:scale-95">
+                                结束训练
+                            </button>
+<!-- Submit Button with requested color mapping via tailwind class -->
+<button class="px-6 py-2 rounded-full bg-[#7FAF7B] text-white font-label-md text-label-md hover:opacity-90 transition-opacity flex items-center gap-2 active:scale-95 shadow-sm">
+                                发送
+                                <span class="material-symbols-outlined text-[18px]">send</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Right Column (30%): 观察记录 (Observation Log) -->
+<aside class="w-[30%] min-w-[280px] max-w-[400px] bg-[#F7F7F5] p-gutter overflow-y-auto hidden xl:flex flex-col">
+<div class="flex items-center gap-3 mb-8">
+<span class="material-symbols-outlined text-primary text-[28px]">psychology</span>
+<h2 class="font-headline-md text-headline-md text-on-background">观察记录</h2>
+</div>
+<!-- AI Feedback Card -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 mb-6 relative overflow-hidden">
+<!-- Subtle green top accent -->
+<div class="absolute top-0 left-0 w-full h-1 bg-primary-container opacity-50"></div>
+<h4 class="font-body-lg text-body-lg font-medium text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary text-[20px]">analytics</span>
+                            实时反馈
+                        </h4>
+<div class="mt-4 space-y-4">
+<div>
+<p class="font-label-md text-label-md text-secondary mb-1">你的回复:</p>
+<p class="font-body-md text-body-md text-on-surface-variant italic border-l-2 border-outline-variant pl-3">"我没有总是拖延，上周的设计改了三次，这不是我的问题..."</p>
+</div>
+<div class="bg-error-container/30 border border-error-container p-3 rounded-lg">
+<h5 class="font-label-md text-label-md text-on-error-container mb-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">warning</span> 防御性反弹
+                                </h5>
+<p class="font-body-md text-body-md text-on-surface text-sm">
+                                    你的回复中使用了“没有总是”和“不是我的问题”，这表现出防御姿态，容易激发对方进一步的指责。
+                                </p>
+</div>
+<div class="pt-2">
+<h5 class="font-label-md text-label-md text-primary mb-2 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">lightbulb</span> 建议尝试
+                                </h5>
+<p class="font-body-md text-body-md text-on-surface text-sm">
+                                    尝试承认事实（设计改动），表达感受（压力/无奈），并提出解决方向。
+                                </p>
+<div class="mt-3 flex flex-wrap gap-2">
+<span class="px-2 py-1 bg-primary-fixed text-on-primary-fixed rounded font-label-md text-xs">事实陈述</span>
+<span class="px-2 py-1 bg-tertiary-fixed text-on-tertiary-fixed rounded font-label-md text-xs">情绪降级</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Skill Metrics (Radar/Chart conceptual representation) -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 mb-6">
+<h4 class="font-body-lg text-body-lg font-medium text-on-surface mb-4">当前状态</h4>
+<div class="space-y-4">
+<!-- Metric 1 -->
+<div>
+<div class="flex justify-between text-sm mb-1">
+<span class="font-body-md text-secondary">情绪平稳度</span>
+<span class="font-label-md text-on-surface">45%</span>
+</div>
+<div class="w-full bg-surface-variant rounded-full h-1.5">
+<div class="bg-tertiary h-1.5 rounded-full" style="width: 45%"></div>
+</div>
+</div>
+<!-- Metric 2 -->
+<div>
+<div class="flex justify-between text-sm mb-1">
+<span class="font-body-md text-secondary">倾听意愿</span>
+<span class="font-label-md text-on-surface">30%</span>
+</div>
+<div class="w-full bg-surface-variant rounded-full h-1.5">
+<div class="bg-error h-1.5 rounded-full" style="width: 30%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Spacer to push footer text down -->
+<div class="flex-grow"></div>
+<!-- Safety Tip Footer -->
+<div class="mt-8 text-center pt-4 border-t border-outline-variant">
+<p class="font-label-md text-[12px] text-secondary flex items-center justify-center gap-1 opacity-60">
+<span class="material-symbols-outlined text-[14px]">info</span>
+                            这是一场模拟训练，不预测真实关系结果。
+                        </p>
+</div>
+</aside>
+</div>
+<!-- BottomNavBar (Mobile Only) - Semantic shell override for transaction/training screen -->
+<!-- Note: While instructions say suppress for tasks, the prompt implies the SideNav should be visible, so we provide mobile equivalent for consistency, but dim it. -->
+<nav class="md:hidden fixed bottom-0 w-full bg-surface border-t border-outline-variant flex justify-around p-3 pb-safe z-40 shadow-[0_-1px_10px_rgba(0,0,0,0.02)]">
+<a class="flex flex-col items-center gap-1 text-secondary p-2" href="#">
+<span class="material-symbols-outlined text-[24px]">home</span>
+<span class="font-label-md text-[10px]">首页</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-primary p-2" href="#">
+<span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">exercise</span>
+<span class="font-label-md text-[10px]">训练中心</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-secondary p-2" href="#">
+<span class="material-symbols-outlined text-[24px]">insights</span>
+<span class="font-label-md text-[10px]">统计</span>
+</a>
+</nav>
+</main>
+</div>
+</body></html>

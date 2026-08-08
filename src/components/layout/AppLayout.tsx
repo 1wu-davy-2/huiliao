@@ -21,6 +21,7 @@ const PAGE_CONTEXT: Record<string, string> = {
   '/': '训练工作台',
   '/practice': '情境库',
   '/lab': '消息实验室',
+  '/lab/ai': 'AI 试炼场',
   '/progress': '能力与复盘',
   '/settings': '设置与隐私',
 }
@@ -68,6 +69,10 @@ export default function AppLayout() {
         </header>
         <main id="main-content" className="content">
           <Outlet />
+          <footer className="app-footer">
+            <span>© 2026 会聊</span>
+            <NavLink to="/privacy">隐私协议</NavLink>
+          </footer>
         </main>
       </div>
       <nav className="bottom-nav" aria-label="主导航（移动端）">

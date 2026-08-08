@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { within } from '@testing-library/react'
@@ -57,7 +57,7 @@ describe('路由与首次设置门禁', () => {
 
   it('完成后访问首页展示工作台而非首次设置', () => {
     renderAt('/', true)
-    expect(screen.getByRole('heading', { name: /今天想练点什么/ })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /今天练哪一场/ })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: '首次设置' })).not.toBeInTheDocument()
   })
 
@@ -98,8 +98,11 @@ describe('路由与首次设置门禁', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: '确认清除' }))
 
-    expect(window.localStorage.getItem(STORAGE_NAMESPACE)).toBeNull()
-    expect(screen.getByRole('heading', { name: '首次设置' })).toBeInTheDocument()
+    // clearCorruptStorage 先清 IndexedDB 再清 localStorage，断言需等微任务落地
+    await waitFor(() => {
+      expect(window.localStorage.getItem(STORAGE_NAMESPACE)).toBeNull()
+    })
+    expect(await screen.findByRole('heading', { name: '首次设置' })).toBeInTheDocument()
   })
 
   it('运行期间本地数据损坏后，下一次写操作进入恢复页且不覆盖原值', async () => {
@@ -146,7 +149,7 @@ describe('路由与首次设置门禁', () => {
     denied = false
     await user.click(screen.getByRole('button', { name: '重新读取本地数据' }))
 
-    expect(screen.getByRole('heading', { name: /今天想练点什么/ })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /今天练哪一场/ })).toBeInTheDocument()
     expect(window.localStorage.getItem(STORAGE_NAMESPACE)).toBe(raw)
     getItemSpy.mockRestore()
   })
@@ -181,7 +184,7 @@ describe('路由与首次设置门禁', () => {
     await user.click(within(nav).getByRole('link', { name: '设置' }))
     expect(screen.getByRole('heading', { name: '设置与隐私' })).toBeInTheDocument()
     await user.click(within(nav).getByRole('link', { name: '首页' }))
-    expect(screen.getByRole('heading', { name: /今天想练点什么/ })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /今天练哪一场/ })).toBeInTheDocument()
   })
 
 })

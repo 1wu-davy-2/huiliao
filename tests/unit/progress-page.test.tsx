@@ -90,7 +90,8 @@ describe('进度页', () => {
     const user = userEvent.setup()
     seedData()
     renderProgress()
-    const favSection = screen.getByText('收藏').parentElement!
+    // 按可及名称定位收藏区，不依赖标题的 DOM 嵌套层级
+    const favSection = screen.getByRole('region', { name: '收藏' })
     await user.click(within(favSection).getByRole('button', { name: '取消收藏' }))
     const stored = JSON.parse(window.localStorage.getItem(STORAGE_NAMESPACE)!) as {
       favorites: string[]

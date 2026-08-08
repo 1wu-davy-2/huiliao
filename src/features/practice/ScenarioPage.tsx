@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowRight, CheckCircle2, NotebookPen, RotateCcw, ShieldAlert } from 'lucide-react'
+import { ArrowRight, CheckCircle2, NotebookPen, RotateCcw, ShieldAlert, Target } from 'lucide-react'
 import { getScenario } from '@/content'
 import { useAppData } from '@/lib/settings/AppDataContext'
 import { safetyCheck } from '@/lib/safety/safety'
@@ -329,12 +329,12 @@ export default function ScenarioPage() {
   return (
     <>
       <header className="page-head">
-        <div className="row" style={{ justifyContent: 'space-between' }}>
+        <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <h1 className="page-title">{scenario.title}</h1>
             <p className="page-sub">{scenario.goal}</p>
           </div>
-          <Link to="/practice" className="btn btn-ghost btn-sm">
+          <Link to="/practice" className="btn btn-ghost btn-sm" style={{ flexShrink: 0 }}>
             退出
           </Link>
         </div>
@@ -359,6 +359,22 @@ export default function ScenarioPage() {
         </div>
       </div>
       <p className="small muted mt-16">{scenario.intro}</p>
+
+      <section className="section" aria-labelledby="goal-title">
+        <div className="section-head">
+          <h2 className="section-title" id="goal-title">
+            训练目标
+          </h2>
+        </div>
+        <ul className="goal-list">
+          {scenario.principles.map((principle) => (
+            <li className="goal-item" key={principle}>
+              <Target size={16} aria-hidden="true" />
+              <span>{principle}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
 
       <section className="section" aria-labelledby="dialog-title">
         <div className="section-head">

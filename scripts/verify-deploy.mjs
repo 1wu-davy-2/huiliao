@@ -35,6 +35,45 @@ check(
   'JS/CSS 文件名未带内容哈希',
 )
 
+// 1b. 自托管字体：CSP 为 font-src 'self'，字体必须随产物发出且不得回退到远程
+const woff2 = assets.filter((f) => f.endsWith('.woff2'))
+check(woff2.length > 0, 'dist/assets 缺少 woff2 字体（font-src 为 self，远程字体会被 CSP 拦截）')
+for (const family of ['hanken-grotesk', 'work-sans', 'be-vietnam-pro']) {
+  check(
+    woff2.some((f) => f.startsWith(family)),
+    `dist/assets 缺少 ${family} 的 woff2 子集`,
+  )
+}
+const fontBytes = woff2.reduce((sum, f) => sum + statSync(join(assetsDir, f)).size, 0)
+check(
+  fontBytes < 600 * 1024,
+  `woff2 总体积 ${Math.round(fontBytes / 1024)} KB 超过 600 KB，可能误打入未子集化字体`,
+)
+// 入口 CSS 不得引用远程字体源
+if (cssFiles.length > 0) {
+  const allCss = cssFiles.map((f) => readFileSync(join(assetsDir, f), 'utf8')).join('\n')
+  check(
+    !/fonts\.googleapis\.com|fonts\.gstatic\.com/.test(allCss),
+    'CSS 中出现 Google Fonts 远程引用（会被 CSP font-src self 拦截）',
+  )
+}
+
+// 1c. OFL-1.1 要求：分发字体软件时必须随附版权声明与许可证文本
+const oflPath = join(DIST, 'licenses', 'fonts-OFL-1.1.txt')
+check(
+  existsSync(oflPath) && statSync(oflPath).size > 1000,
+  'dist/licenses/fonts-OFL-1.1.txt 缺失或过小（自托管字体分发必须随附 OFL 许可证）',
+)
+if (existsSync(oflPath)) {
+  const ofl = readFileSync(oflPath, 'utf8')
+  for (const family of ['Hanken Grotesk', 'Work Sans', 'Be Vietnam Pro']) {
+    check(ofl.includes(family), `OFL 许可证文件缺少 ${family} 的版权声明`)
+  }
+}
+
+// 1d. 设计稿不得进入产物
+check(!existsSync(join(DIST, 'stitch_')), 'dist 中出现 stitch_ 设计稿目录（应只存在于 docs/）')
+
 // 2. 本地图片完整
 const AVATARS = ['lina', 'ran', 'yue', 'yan', 'qing', 'tong', 'zhao', 'jie']
 for (const name of AVATARS) {
@@ -57,8 +96,62 @@ for (const file of [...jsFiles, ...cssFiles]) {
 }
 check(!existsSync(join(DIST, '.env')), 'dist 中出现 .env')
 
-// 4. bundle 不含 draft 场景（按场景内容标记检查；reviewStatus 字段名本身是运行时合法代码）
-const DRAFT_MARKERS = ['成年人自愿情趣的事前边界协商', '绿黄红信号与中途撤回']
+// 4. favicon 资源
+const FAVICON_FILES = ['favicon.svg', 'favicon.ico', 'apple-touch-icon.png']
+for (const name of FAVICON_FILES) {
+  const p = join(DIST, name)
+  check(existsSync(p) && statSync(p).size > 0, `dist/${name} 缺失或为空`)
+}
+// 验证 ICO 魔数（前4字节：00 00 01 00）
+const icoPath = join(DIST, 'favicon.ico')
+if (existsSync(icoPath)) {
+  const icoBuf = readFileSync(icoPath)
+  check(icoBuf.length >= 22, 'favicon.ico 大小不足以包含 ICO 头')
+  if (icoBuf.length >= 4) {
+    const magicOk = icoBuf[0] === 0 && icoBuf[1] === 0 && icoBuf[2] === 1 && icoBuf[3] === 0
+    check(magicOk, 'favicon.ico 魔数不正确（应为 ICO 格式）')
+  }
+}
+// 验证 apple-touch-icon.png 为 180×180
+const applePath = join(DIST, 'apple-touch-icon.png')
+if (existsSync(applePath)) {
+  const pngBuf = readFileSync(applePath)
+  check(pngBuf.length >= 29, 'apple-touch-icon.png 大小不足以包含 PNG 头')
+  const width = pngBuf.readUInt32BE(16)
+  const height = pngBuf.readUInt32BE(20)
+  check(width === 180 && height === 180, `apple-touch-icon.png 尺寸应为 180×180，实际为 ${width}×${height}`)
+}
+
+// 5. bundle 不含 draft 内容（按内容标记检查；reviewStatus 字段名本身是运行时合法代码）。
+//    必须覆盖全部草稿：scenarios-draft.ts 的 s14–s18 标题与 ai-trials-draft.ts 的 18 道题标题。
+//    新增草稿时必须同步把其唯一标题加到这里，否则发布门不会拦截泄漏。
+const DRAFT_MARKERS = [
+  // s14–s18（成年人情趣边界草稿场景）
+  '成年人自愿情趣的事前边界协商',
+  '绿黄红信号与中途撤回',
+  '性结束后的事后照护协商',
+  '性接触进行中的撤回与降级',
+  '支配与臣服偏好不对等时的沟通',
+  // 18 道 AI 试炼候选题（全部待人工审校）
+  '初次认识——活动后的自然开口',
+  '线上聊天——回应对方的一条朋友圈',
+  '日常关心——对方说今天很累',
+  '邀约——从聊天到提出见面',
+  '表达好感——不让对方有压力',
+  '对方回复变短——调整节奏',
+  '对方明确拒绝——接受并体面收尾',
+  '发生误会——澄清而不升级冲突',
+  '亲密冲动——暂停并确认同意',
+  '翻译任务——指定风格和受众',
+  '摘要任务——限制长度和要点数',
+  '分类任务——给定类别做判断',
+  '结构化提取——从文本中提取指定字段',
+  '防注入——写一个不被误导的 Prompt',
+  '多步推理——先判断再生成',
+  '多角色约束——同时满足多个用户画像',
+  '格式化约束——生成合法 CSV 并处理特殊字符',
+  '链式约束——多轮条件输出格式',
+]
 for (const file of jsFiles) {
   const content = readFileSync(join(assetsDir, file), 'utf8')
   for (const marker of DRAFT_MARKERS) {

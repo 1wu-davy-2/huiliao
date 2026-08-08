@@ -1,0 +1,12 @@
+/* 自托管字体（均为 OFL-1.1）。
+   woff2 由 Vite 打包并哈希进 /assets/，因此满足 CSP 的 font-src 'self'，
+   同时吃到 vercel.json 对 /assets/(.*) 的 immutable 缓存头。
+
+   可变字重包只提供 wght.css 单入口，内含 latin 与 latin-ext 两组 unicode-range，
+   浏览器按页面实际出现的字形按需下载。Be Vietnam Pro 无可变版本，
+   按用到的 400/500/600 三档静态字重引入，仅 latin 子集。 */
+@import '@fontsource-variable/hanken-grotesk/wght.css';
+@import '@fontsource-variable/work-sans/wght.css';
+@import '@fontsource/be-vietnam-pro/latin-400.css';
+@import '@fontsource/be-vietnam-pro/latin-500.css';
+@import '@fontsource/be-vietnam-pro/latin-600.css';

@@ -9,6 +9,8 @@ export default function SettingsPage() {
   const { data, updateSettings, resetSettings, exportData, clearAll } = useAppData()
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [exported, setExported] = useState(false)
+  const [clearing, setClearing] = useState(false)
+  const [clearError, setClearError] = useState<string | null>(null)
 
   const exportJson = () => {
     const json = exportData()
@@ -25,8 +27,19 @@ export default function SettingsPage() {
     setExported(true)
   }
 
-  const handleClear = () => {
-    if (!clearAll()) return
+  // clearAll 现在会 await IndexedDB（试炼完整对话）清理。
+  // 失败必须显式暴露：不能在未真正清空的情况下关掉弹层并跳转，谎报成功。
+  const handleClear = async () => {
+    setClearError(null)
+    setClearing(true)
+    try {
+      await clearAll()
+    } catch {
+      setClearError('清除失败：保存完整试炼对话的本地数据库未能清空，本地数据未变更。请重试。')
+      return
+    } finally {
+      setClearing(false)
+    }
     setConfirmOpen(false)
     navigate('/onboarding', { replace: true })
   }
@@ -174,14 +187,19 @@ export default function SettingsPage() {
 
       <Modal open={confirmOpen} title="确认清除全部数据" onClose={() => setConfirmOpen(false)}>
         <p>
-          这将删除本浏览器中保存的首次设置、进度、收藏和全部复盘，且无法恢复。建议先导出备份。
+          这将删除本浏览器中保存的首次设置、进度、收藏、全部复盘，以及 AI 试炼场的完整对话记录（IndexedDB），且无法恢复。建议先导出备份。
         </p>
+        {clearError !== null && (
+          <p className="field-error" role="alert">
+            {clearError}
+          </p>
+        )}
         <div className="row mt-24" style={{ justifyContent: 'flex-end' }}>
           <button type="button" className="btn btn-ghost" onClick={() => setConfirmOpen(false)}>
             取消
           </button>
-          <button type="button" className="btn btn-danger" onClick={handleClear}>
-            确认清除
+          <button type="button" className="btn btn-danger" onClick={handleClear} disabled={clearing}>
+            {clearing ? '清除中…' : '确认清除'}
           </button>
         </div>
       </Modal>
