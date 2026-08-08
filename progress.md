@@ -44,7 +44,9 @@
 | `a3b38c5` | feat: 部署门禁草稿扫描扩展至 s14–s18 与全部 AI 草稿 |
 | `8170f0d` | test: 稳定损坏数据恢复路由断言 |
 
-推送状态：尚未推送（等待与用户确认后推送到 `origin/ai-trial-hardening` 或合并目标）。
+推送状态：已推送并跟踪 `origin/ai-trial-hardening`；未合并、未修改 `main`。
+
+Pull Request 入口：<https://github.com/1wu-davy-2/huiliao/pull/new/ai-trial-hardening>
 
 ## 五问重启检查
 
