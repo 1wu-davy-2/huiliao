@@ -11,7 +11,7 @@
 [![React 18](https://img.shields.io/badge/React-18-217a70)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Strict-165e57)](https://www.typescriptlang.org)
 [![Vite 5](https://img.shields.io/badge/Vite-5-747bff)](https://vitejs.dev)
-[![Vitest](https://img.shields.io/badge/Vitest-159%20tests-2f7d4d)](https://vitest.dev)
+[![Vitest](https://img.shields.io/badge/Vitest-540%20tests-2f7d4d)](https://vitest.dev)
 [![Local-First](https://img.shields.io/badge/Data-Local%20First-b78324)]()
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-red)](LICENSE)
 
@@ -157,7 +157,7 @@ Vercel（静态资源 + 同源中转函数）
 | 前端 | React 18 · TypeScript（严格模式）· Vite 5 · React Router 6 |
 | 数据契约 | Zod（场景图、隐私主题、存储 schema 运行时校验） |
 | 样式 | 原生 CSS + 设计令牌（米白/深墨/鼠尾草绿/砖红/金）· 自托管 OFL 字体（Hanken Grotesk / Be Vietnam Pro / Work Sans） |
-| 测试 | Vitest + React Testing Library（159 用例）· Playwright（环境恢复后运行） |
+| 测试 | Vitest + React Testing Library（540 用例）· Playwright（环境恢复后运行） |
 | 部署 | Vercel 纯静态 · Node 22 · `verify:deploy` 构建链 |
 
 ### 本地开发

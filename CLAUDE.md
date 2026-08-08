@@ -9,7 +9,7 @@ npm ci                  # Install dependencies (Node 22.x required)
 npm run dev             # Vite dev server → http://localhost:5173
 npm run build           # tsc -b && vite build → dist/
 npm run preview         # Preview production build locally
-npm test                # All Vitest unit tests (233 tests / 20 files)
+npm test                # All Vitest unit tests (540 tests / 26 files, 2026-08-08 实测)
 npm run test:watch      # Vitest watch mode
 npm run lint            # ESLint (TypeScript + React hooks)
 npm run typecheck:api   # tsc against api/ only (separate project, not in tsc -b)
@@ -28,16 +28,11 @@ npx playwright install chromium                              # If browsers missi
 
 If Playwright cannot run, report it as `BLOCKED` and follow `docs/TESTING_WITHOUT_PLAYWRIGHT.md`. Do not claim E2E success.
 
-### Known-broken: `typecheck:api` (half-finished urlPolicy refactor)
+### `typecheck:api` 状态（2026-08-08 实测）
 
-`npm run typecheck:api` currently **exits 2**, with 5 errors. `@vercel/node` is *not* the cause — it is present as a devDependency (`^5.9.5`) and in the lockfile. The cause is an in-progress SSRF-hardening refactor of `api/_lib/urlPolicy.ts` whose call sites were never migrated:
+**PASS**（exit 0）。之前的 SSRF 加固重构（`urlPolicy.ts` 的 `resolveAndPin`/`PinnedTarget`）已在 `dfc0cc8` 完成并通过，`api/` 下无 `any`/类型强转。安全不变量全部有测试覆盖：HTTPS-only、DNS 全地址公网 unicast 校验、IP 钉定（`upstream.ts` 连接钉定地址不重解析）、自递归拒绝（`selfHosts`）、禁止重定向、25 秒截止、1 MB 请求/响应上限、密钥回显拒绝（`UPSTREAM_SECRET_ECHO`）、错误响应只含 error code。修改 `api/` 时必须保持这些不变量，并同步 `tests/unit/api-{url-policy,upstream,providers,handlers}.test.ts`。
 
-- `api/ai/turn.ts` and `api/ai/evaluate.ts` import `validateBaseUrl`, which no longer exists. The replacement is `async resolveAndPin(raw, deps)` — note it is **async**, so those call sites need `await`.
-- `api/_lib/providers/{anthropic,gemini,openaiCompatible}.ts` each pass a `string` where `upstream.ts` now requires a `PinnedTarget` object.
-
-The real scope is wider than five errors suggests. `turn.ts`/`evaluate.ts` thread a plain `origin: string` into `dispatchProvider`, so that entire channel has to become a `PinnedTarget`; the old result's `.origin` field is gone, and adapters now compose the URL from `hostname`/`port` plus `joinPath(pathPrefix, adapterPath)` — that helper exists because `new URL()` would silently drop a gateway prefix like `/v1`. Note also that the **preset branch skips pinning entirely**, assigning `origin` straight from `PRESET_HOSTS[presetId]`; presets are trusted hosts so this is not a live SSRF hole, but they still need to yield a `PinnedTarget` for the types to line up. Don't close the gap with a cast.
-
-Finishing the refactor (not reverting it) is the intended fix — `upstream.ts` is already migrated. Because `verify:deploy` chains with `&&` and is Vercel's `buildCommand`, this blocks deploys; don't work around it by dropping the step from the chain.
+`verify:deploy` 链（lint → test → build → typecheck:api → verify-deploy.mjs）是 Vercel 的 `buildCommand`，任何一步失败都会阻断部署；不要删减链上的步骤。
 
 ## Architecture
 
