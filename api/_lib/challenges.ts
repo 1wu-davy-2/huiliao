@@ -19,6 +19,32 @@ const REVIEWED_BY_ID: Map<string, TrialChallenge> = new Map(
   AI_TRIALS_REVIEWED.filter((c) => c.reviewStatus === 'reviewed').map((c) => [c.id, c]),
 )
 
+// 开发模式：题库为空时注入演示题，保持与 src/content/ai-trials.ts _DEV_DEMO 同步
+// production 下此分支永不执行（NODE_ENV=production），不影响安全门控
+if (process.env['NODE_ENV'] !== 'production' && REVIEWED_BY_ID.size === 0) {
+  const devDemo: TrialChallenge = {
+    id: 'demo-preview-001',
+    reviewStatus: 'reviewed',
+    mode: 'promptcraft',
+    difficulty: 'normal',
+    title: '【演示专用】日常寒暄练习',
+    brief: '通过精心设计的提示词，引导模型生成一段自然、有温度的日常问候回应。',
+    objective: '编写一段提示词，让模型以朋友的口吻回应久未联系后的问候，不超过 100 字，语气真诚不矫情。',
+    initialPrompt: '请设计一段 Prompt，让模型扮演一位久未联系的朋友，回应问候"最近怎么样？感觉你好久没出现了。"',
+    acceptanceCriteria: [
+      'Prompt 清晰描述了角色和语气要求',
+      '输出内容不超过 100 字',
+      '语气自然，没有使用攻击性或回避性表达',
+    ],
+    hardChecks: [
+      { type: 'nonEmpty' },
+      { type: 'maxChars', max: 200 },
+      { type: 'safeCommunication' },
+    ],
+  }
+  REVIEWED_BY_ID.set(devDemo.id, devDemo)
+}
+
 /** 已审校题池是否为空。为空时功能对外不可用（发布门）。 */
 export function hasReviewedPool(): boolean {
   return REVIEWED_BY_ID.size > 0
