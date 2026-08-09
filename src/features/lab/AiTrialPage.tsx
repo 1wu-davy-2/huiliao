@@ -410,6 +410,7 @@ export default function AiTrialPage() {
             <div className="ai-field-group">
               <label className="ai-label" htmlFor="ai-base-url">Base URL (HTTPS)</label>
               <input id="ai-base-url" className="ai-input" type="url" placeholder="https://your-proxy.example.com/v1" value={customUrl} onChange={(e) => setCustomUrl(e.target.value)} />
+              <p className="ai-hint">需要填完整路径前缀（通常是 /v1，Gemini 是 /v1beta）。接口路径由服务端追加，不会覆盖你填的前缀。cc-switch 等工具会自动补 /v1，它们的配置不能原样粘贴过来。</p>
             </div>
           )}
 

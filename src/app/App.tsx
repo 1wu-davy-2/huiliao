@@ -4,6 +4,7 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useAppData } from '@/lib/settings/AppDataContext'
 import AppLayout from '@/components/layout/AppLayout'
 import OnboardingPage from '@/features/onboarding/OnboardingPage'
+import LandingPage from '@/features/landing/LandingPage'
 import HomePage from '@/features/home/HomePage'
 import PracticePage from '@/features/practice/PracticePage'
 import ScenarioPage from '@/features/practice/ScenarioPage'
@@ -152,6 +153,7 @@ export default function App() {
 
   return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
       <Route path="/onboarding" element={<OnboardingPage />} />
       <Route
         element={
@@ -160,7 +162,7 @@ export default function App() {
           </RequireOnboarding>
         }
       >
-        <Route path="/" element={<HomePage />} />
+        <Route path="/home" element={<HomePage />} />
         <Route path="/practice" element={<PracticePage />} />
         <Route path="/practice/:id" element={<ScenarioPage />} />
         <Route path="/lab" element={<LabHubPage />} />

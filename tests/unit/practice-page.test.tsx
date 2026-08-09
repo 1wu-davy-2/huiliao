@@ -42,13 +42,27 @@ describe('情境库', () => {
     }
   })
 
-  it('组合筛选无结果时显示空状态', async () => {
+  it('单一维度筛选无结果时显示空状态', async () => {
     const user = userEvent.setup()
     renderPractice()
-    // 初次约会（date）均为约会现场渠道，与即时消息无交集
-    await user.click(screen.getByRole('button', { name: '初次约会' }))
-    await user.click(screen.getByRole('button', { name: '即时消息' }))
+    // 已发布场景中没有「陌生人」阶段，单维度即可触达空状态
+    expect(SCENARIOS.filter((s) => s.stage === 'stranger')).toHaveLength(0)
+    await user.click(screen.getByRole('button', { name: '陌生人' }))
     expect(screen.getByText('没有符合条件的场景。试试清除筛选，或调整组合。')).toBeInTheDocument()
+  })
+
+  it('选中一个维度后其余维度被禁用，点回全部后恢复', async () => {
+    const user = userEvent.setup()
+    renderPractice()
+    await user.click(screen.getByRole('button', { name: '初次约会' }))
+    // 其他维度整组禁用，避免出现无意义的组合筛选
+    expect(screen.getByRole('button', { name: '即时消息' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: '邀约' })).toBeDisabled()
+    // 当前维度自身仍可操作：第一个「全部」属于关系阶段组
+    const stageAll = screen.getAllByRole('button', { name: '全部' })[0]
+    expect(stageAll).toBeEnabled()
+    await user.click(stageAll)
+    expect(screen.getByRole('button', { name: '即时消息' })).toBeEnabled()
   })
 
   it('清除筛选恢复全部场景', async () => {

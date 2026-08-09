@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowRight, CheckCircle2, NotebookPen, RotateCcw, ShieldAlert, Target } from 'lucide-react'
 import { getScenario } from '@/content'
@@ -62,6 +62,20 @@ export default function ScenarioPage() {
   const [reflectionSaved, setReflectionSaved] = useState(false)
   const [recordSaved, setRecordSaved] = useState(false)
   const [error, setError] = useState('')
+
+  // 选择或提交后自动将反馈区滚入视口
+  // jsdom 未实现 scrollIntoView，需显式判断方法存在（?. 只挡 current 为 null）
+  const feedbackRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    if (feedback === null) return
+    const timer = setTimeout(() => {
+      const node = feedbackRef.current
+      if (typeof node?.scrollIntoView === 'function') {
+        node.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }, 60)
+    return () => clearTimeout(timer)
+  }, [feedback])
 
   const startScenario = useCallback(() => {
     if (!scenario) return
@@ -328,53 +342,33 @@ export default function ScenarioPage() {
 
   return (
     <>
-      <header className="page-head">
-        <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <h1 className="page-title">{scenario.title}</h1>
-            <p className="page-sub">{scenario.goal}</p>
-          </div>
-          <Link to="/practice" className="btn btn-ghost btn-sm" style={{ flexShrink: 0 }}>
-            退出
-          </Link>
+      {/* ── 紧凑顶部：标题 + 退出 ── */}
+      <header className="page-head sp-header">
+        <div>
+          <h1 className="page-title">{scenario.title}</h1>
+          <p className="page-sub">{scenario.goal}</p>
         </div>
+        <Link to="/practice" className="btn btn-ghost btn-sm sp-exit">
+          退出
+        </Link>
       </header>
 
-      <div className="character-card card">
-        <div className="msg-avatar">
-          <img
-            className="avatar-img"
-            src={scenario.character.avatar}
-            alt={`${scenario.character.name}（虚构练习角色）头像`}
-          />
+      {/* ── 紧凑信息条：角色 + 场景介绍 + 训练目标 合并为一块 ── */}
+      <div className="sp-info">
+        <div className="sp-info-char">
+          <img className="sp-avatar" src={scenario.character.avatar} alt="" aria-hidden="true" />
+          <span className="sp-char-name">{scenario.character.name} · {scenario.character.age} 岁</span>
+          <span className="tag tag-primary sp-char-tag">虚构练习角色</span>
+          <span className="sp-char-tagline">{scenario.character.tagline}</span>
         </div>
-        <div>
-          <p className="bold">
-            {scenario.character.name} · {scenario.character.age} 岁
-            <span className="tag tag-primary" style={{ marginLeft: 8 }}>
-              虚构练习角色
-            </span>
-          </p>
-          <p className="small muted">{scenario.character.tagline}</p>
+        <p className="sp-intro">{scenario.intro}</p>
+        <div className="sp-goals" aria-label="训练目标">
+          <Target size={13} aria-hidden="true" />
+          {scenario.principles.map((p, i) => (
+            <span key={p}>{i > 0 && <span className="sp-dot" aria-hidden="true">·</span>}{p}</span>
+          ))}
         </div>
       </div>
-      <p className="small muted mt-16">{scenario.intro}</p>
-
-      <section className="section" aria-labelledby="goal-title">
-        <div className="section-head">
-          <h2 className="section-title" id="goal-title">
-            训练目标
-          </h2>
-        </div>
-        <ul className="goal-list">
-          {scenario.principles.map((principle) => (
-            <li className="goal-item" key={principle}>
-              <Target size={16} aria-hidden="true" />
-              <span>{principle}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
 
       <section className="section" aria-labelledby="dialog-title">
         <div className="section-head">
@@ -500,7 +494,7 @@ export default function ScenarioPage() {
       )}
 
       {feedback && (
-        <section className="section" aria-labelledby="feedback-title">
+        <section ref={feedbackRef} className="section" aria-labelledby="feedback-title">
           <div className={feedback.kind === 'blocked' ? 'feedback feedback-warning' : 'feedback'}>
             <h3 id="feedback-title">
               {feedback.kind === 'blocked'

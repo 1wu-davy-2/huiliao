@@ -14,14 +14,14 @@ import { useAppData } from '@/lib/settings/AppDataContext'
 /** 一级导航 4 项，侧栏与底栏共用。`match` 是该入口应高亮的路径前缀集合：
  *  训练中心收纳了 /practice 与 /lab/*，NavLink 的 end 判断无法表达，故自行比对。 */
 const NAV_ITEMS = [
-  { to: '/', label: '首页', icon: Home, match: ['/'] },
+  { to: '/home', label: '首页', icon: Home, match: ['/home'] },
   { to: '/lab', label: '训练中心', icon: Dumbbell, match: ['/practice', '/lab'] },
   { to: '/progress', label: '进度统计', icon: TrendingUp, match: ['/progress'] },
   { to: '/settings', label: '设置', icon: Settings, match: ['/settings'] },
 ]
 
 const PAGE_CONTEXT: Record<string, string> = {
-  '/': '训练工作台',
+  '/home': '训练工作台',
   '/practice': '情境库',
   '/lab': '训练中心',
   '/lab/message': '消息诊断',

@@ -43,14 +43,16 @@ function FilterGroup<T extends string>({
   options,
   value,
   onChange,
+  disabled,
 }: {
   label: string
   options: Record<T, string>
   value: T | typeof EMPTY
   onChange: (v: T | typeof EMPTY) => void
+  disabled?: boolean
 }) {
   return (
-    <div className="filter-group">
+    <div className={`filter-group${disabled ? ' filter-group-disabled' : ''}`}>
       <span className="filter-label">{label}</span>
       <div className="segmented" role="group" aria-label={label}>
         <button
@@ -58,6 +60,7 @@ function FilterGroup<T extends string>({
           className="seg-btn"
           aria-pressed={value === EMPTY}
           onClick={() => onChange(EMPTY)}
+          disabled={disabled}
         >
           全部
         </button>
@@ -68,6 +71,7 @@ function FilterGroup<T extends string>({
             className="seg-btn"
             aria-pressed={value === key}
             onClick={() => onChange(key)}
+            disabled={disabled}
           >
             {options[key]}
           </button>
@@ -84,6 +88,14 @@ function FilterPanel({
   filters: Filters
   onChange: (f: Filters) => void
 }) {
+  // 已选中的维度；只允许单维度激活，其他组禁用
+  const activeGroup =
+    filters.stage !== EMPTY ? 'stage' :
+    filters.channel !== EMPTY ? 'channel' :
+    filters.purpose !== EMPTY ? 'purpose' :
+    filters.status !== EMPTY ? 'status' :
+    filters.tag !== EMPTY ? 'tag' : null
+
   return (
     <div className="stack">
       <FilterGroup
@@ -91,30 +103,35 @@ function FilterPanel({
         options={STAGE_LABELS}
         value={filters.stage}
         onChange={(v) => onChange({ ...filters, stage: v })}
+        disabled={activeGroup !== null && activeGroup !== 'stage'}
       />
       <FilterGroup
         label="沟通渠道"
         options={CHANNEL_LABELS}
         value={filters.channel}
         onChange={(v) => onChange({ ...filters, channel: v })}
+        disabled={activeGroup !== null && activeGroup !== 'channel'}
       />
       <FilterGroup
         label="目的"
         options={PURPOSE_LABELS}
         value={filters.purpose}
         onChange={(v) => onChange({ ...filters, purpose: v })}
+        disabled={activeGroup !== null && activeGroup !== 'purpose'}
       />
       <FilterGroup
         label="互动状态"
         options={STATUS_LABELS}
         value={filters.status}
         onChange={(v) => onChange({ ...filters, status: v })}
+        disabled={activeGroup !== null && activeGroup !== 'status'}
       />
       <FilterGroup
         label="专题标签"
         options={{ privacy: '隐私' } as Record<TagFilter, string>}
         value={filters.tag}
         onChange={(v) => onChange({ ...filters, tag: v })}
+        disabled={activeGroup !== null && activeGroup !== 'tag'}
       />
     </div>
   )

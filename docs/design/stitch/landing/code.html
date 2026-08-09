@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>会聊 - 沟通心理实践</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS with Config -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-background": "#1c1b1b",
+                        "on-error": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "surface": "#fcf9f8",
+                        "on-surface-variant": "#42493f",
+                        "on-secondary-fixed-variant": "#3a4950",
+                        "inverse-primary": "#a1d39c",
+                        "surface-container-highest": "#e5e2e1",
+                        "on-secondary-fixed": "#0f1d24",
+                        "tertiary": "#50616b",
+                        "primary-fixed-dim": "#a1d39c",
+                        "surface-bright": "#fcf9f8",
+                        "on-primary-container": "#164219",
+                        "secondary": "#526168",
+                        "tertiary-fixed-dim": "#b7c9d4",
+                        "secondary-fixed": "#d5e5ee",
+                        "surface-tint": "#3c683b",
+                        "on-secondary": "#ffffff",
+                        "outline-variant": "#c2c9bd",
+                        "on-primary-fixed": "#002205",
+                        "error": "#ba1a1a",
+                        "primary-container": "#7faf7b",
+                        "outline": "#72796f",
+                        "tertiary-container": "#94a6b1",
+                        "on-secondary-container": "#56656d",
+                        "primary-fixed": "#bdf0b6",
+                        "surface-dim": "#dcd9d9",
+                        "background": "#fcf9f8",
+                        "surface-container-high": "#eae7e7",
+                        "on-primary-fixed-variant": "#245026",
+                        "inverse-surface": "#313030",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#f6f3f2",
+                        "inverse-on-surface": "#f3f0ef",
+                        "secondary-container": "#d2e2eb",
+                        "on-error-container": "#93000a",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-container": "#2b3c45",
+                        "on-surface": "#1c1b1b",
+                        "on-tertiary-fixed": "#0c1e26",
+                        "surface-container": "#f0eded",
+                        "tertiary-fixed": "#d3e5f1",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#384952",
+                        "surface-variant": "#e5e2e1",
+                        "primary": "#3c683b",
+                        "secondary-fixed-dim": "#b9c9d2"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "unit": "8px",
+                        "container_max_width": "1440px",
+                        "nav_width": "240px",
+                        "gutter": "32px",
+                        "side_info_width": "320px",
+                        "section_margin": "64px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Work Sans", "sans-serif"],
+                        "body-md": ["Be Vietnam Pro", "sans-serif"],
+                        "body-lg": ["Be Vietnam Pro", "sans-serif"],
+                        "display-lg": ["Hanken Grotesk", "sans-serif"],
+                        "headline-md": ["Hanken Grotesk", "sans-serif"],
+                        "headline-lg": ["Hanken Grotesk", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "label-md": ["14px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "display-lg": ["48px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "display-lg-mobile": ["36px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "1.4", "fontWeight": "500" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.3", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased selection:bg-primary-container selection:text-on-primary-container">
+<!-- Header (Landing Page Variation) -->
+<header class="w-full fixed top-0 z-50 bg-background/80 backdrop-blur-md border-b border-outline-variant/30">
+<div class="max-w-container_max_width mx-auto h-20 px-gutter flex items-center justify-between">
+<div class="flex items-center gap-3">
+<img alt="会聊 Logo" class="h-8 w-auto" src="https://lh3.googleusercontent.com/aida/AP1WRLuqYq51F-XS_Jhjk9UEp7BzWsNSF8y5DNo-IsS6wnaTaQkMSAIy-GiJMWR7keb8IZlJ3vGcO7zcymqu9VXPSmh0c8EwaTFNoUQsJkQgFqf3IsmyTaHBxV7N73oNwXT2Q4iznODMfxHFZj0oH6D4CT5vVlL9S7wzJkhCpSc8OycxGm3Js8NtUCHfu_m3sJpj-X5m3T1cAVjDk9RAdp-rPHEYMsgscAdYkI1j6NAYL9e00rOjHmBUecHWE1Ew"/>
+<span class="font-headline-md text-headline-md text-primary tracking-tight">会聊</span>
+</div>
+<nav class="hidden md:flex gap-8">
+<a class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors" href="#philosophy">产品理念</a>
+<a class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors" href="#features">训练内容</a>
+</nav>
+<div>
+<a class="inline-flex items-center justify-center font-label-md text-label-md px-6 py-2.5 rounded-full bg-primary-container text-on-primary-container hover:bg-primary hover:text-on-primary transition-all duration-300" href="#">
+                    登录
+                </a>
+</div>
+</div>
+</header>
+<main class="pt-32 pb-section_margin">
+<!-- Hero Section -->
+<section class="max-w-[1000px] mx-auto px-gutter text-center mt-12 md:mt-24 mb-section_margin">
+<h1 class="font-display-lg-mobile md:font-display-lg text-display-lg-mobile md:text-display-lg text-on-background mb-6 leading-tight">
+                把话说清楚，<br class="md:hidden"/>是成年人最顶级的修养
+            </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto mb-12">
+                一个帮助成年人练习清晰表达、尊重沟通与处理冲突的训练平台。在安全的环境中，重塑你的沟通模式。
+            </p>
+<div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+<a class="inline-flex items-center justify-center font-label-md text-label-md px-8 py-4 rounded-full bg-primary-container text-on-primary-container hover:bg-primary hover:text-on-primary transition-all duration-300 shadow-sm w-full sm:w-auto" href="#">
+                    立即开始训练
+                </a>
+<a class="inline-flex items-center justify-center font-label-md text-label-md px-8 py-4 rounded-full border border-outline-variant text-on-surface-variant hover:bg-surface-container-low transition-colors w-full sm:w-auto" href="#philosophy">
+                    了解更多
+                </a>
+</div>
+</section>
+<!-- Product Preview Image -->
+<section class="max-w-container_max_width mx-auto px-gutter mb-section_margin">
+<div class="w-full aspect-video rounded-xl bg-surface-container-high border border-outline-variant/50 overflow-hidden relative" data-alt="A clean, minimalist web dashboard interface for a communication training platform. The UI features a soft, light-mode palette with a focus on expansive whitespace, `#F7F7F5` background, and subtle `#7FAF7B` green accents. It displays analytical charts (like a radar chart for soft skills) and a central chat-like interface for role-playing scenarios, executed in a professional, mature, and editorial design style reminiscent of high-end personal growth tools." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDaQcIIq-Vl-5zFHbwAQPMyt1bhMoqik2P2bwznRvK0Y1nuAlJg3sdFQalGDBZ9C09gVG5kL8QoVxlynwee9lq-2I1fr88m1HmHE_4OJEh_AFcGDHMaR8ncpPzfi6KGUkThCCBBsDDvZqsKgABoMAcKjX7tG-nsMZPEAhhNiVUia6sO0SY_1PCB5CAtAyE40C_gJLMaXK43t_pVH2pAHME-MvIzW20NqLKeTTGVRJAKD-_SvmOp4JxM4A'); background-size: cover; background-position: center;">
+<!-- Overlay for aesthetic -->
+<div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-20"></div>
+</div>
+</section>
+<!-- Value Propositions -->
+<section class="max-w-container_max_width mx-auto px-gutter py-section_margin border-t border-outline-variant/30" id="features">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-12 lg:gap-24">
+<!-- Pillar 1 -->
+<div class="flex flex-col group">
+<div class="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center mb-6 border border-outline-variant/50 group-hover:bg-primary-container transition-colors duration-500">
+<span class="material-symbols-outlined text-primary group-hover:text-on-primary-container" data-icon="forum">forum</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-background mb-4">清晰表达</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">
+                        摆脱词不达意，精准传递核心诉求。学习如何剥离情绪，用结构化的语言表达真实的需要，让沟通不再内耗。
+                    </p>
+</div>
+<!-- Pillar 2 -->
+<div class="flex flex-col group">
+<div class="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center mb-6 border border-outline-variant/50 group-hover:bg-primary-container transition-colors duration-500">
+<span class="material-symbols-outlined text-primary group-hover:text-on-primary-container" data-icon="fence">fence</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-background mb-4">边界意识</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">
+                        建立健康的人际边界，学会温和而坚定地拒绝。在尊重他人的同时，守护自己的心理空间，实现平等的对话。
+                    </p>
+</div>
+<!-- Pillar 3 -->
+<div class="flex flex-col group">
+<div class="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center mb-6 border border-outline-variant/50 group-hover:bg-primary-container transition-colors duration-500">
+<span class="material-symbols-outlined text-primary group-hover:text-on-primary-container" data-icon="handshake">handshake</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-background mb-4">冲突处理</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">
+                        直面分歧，不再逃避。掌握将冲突转化为加深理解的契机，通过非暴力沟通技巧，在对立中寻找共识。
+                    </p>
+</div>
+</div>
+</section>
+<!-- Philosophy Section -->
+<section class="max-w-[800px] mx-auto px-gutter py-section_margin text-center" id="philosophy">
+<h2 class="font-headline-lg text-headline-lg text-on-background mb-8">专注于人的成长，而非机器的效率</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed">
+                我们坚信，沟通是一门需要终身练习的手艺。会聊不是一个为你代写回复的 AI 工具，更不是追求捷径的效率插件。它是一个安静的、私人的心理实践室。在这里，你通过反复的模拟与反思，构建属于自己的成熟人格。
+            </p>
+</section>
+<!-- Bottom CTA -->
+<section class="max-w-container_max_width mx-auto px-gutter py-section_margin mb-12">
+<div class="bg-surface-container-low rounded-xl p-12 md:p-24 text-center border border-outline-variant/50 relative overflow-hidden">
+<!-- Subtle decorative background element -->
+<div class="absolute top-0 right-0 w-64 h-64 bg-primary-container/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+<div class="absolute bottom-0 left-0 w-64 h-64 bg-tertiary-container/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3"></div>
+<div class="relative z-10">
+<h2 class="font-headline-lg text-headline-lg text-on-background mb-6">准备好重塑你的沟通模式了吗？</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mb-10 max-w-md mx-auto">
+                        加入会聊，开启你的第一次专项沟通训练。
+                    </p>
+<a class="inline-flex items-center justify-center font-label-md text-label-md px-10 py-4 rounded-full bg-primary text-on-primary hover:bg-primary-container hover:text-on-primary-container transition-all duration-300 shadow-sm" href="#">
+                        免费体验
+                    </a>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer Component from JSON -->
+<footer class="w-full bg-background dark:bg-background border-t border-outline-variant mt-section_margin">
+<div class="max-w-container_max_width mx-auto py-8 px-gutter flex flex-col md:flex-row justify-between items-center gap-4">
+<div class="font-label-md text-label-md text-secondary">
+                © 2024 会聊 | 专业沟通心理实践
+            </div>
+<nav class="flex gap-6">
+<a class="font-label-md text-label-md text-secondary hover:underline transition-opacity" href="#">隐私协议</a>
+<a class="font-label-md text-label-md text-secondary hover:underline transition-opacity" href="#">服务条款</a>
+<a class="font-label-md text-label-md text-secondary hover:underline transition-opacity" href="#">安全提示</a>
+</nav>
+</div>
+</footer>
+</body></html>

@@ -1,42 +1,47 @@
+/// <reference types="vite/client" />
 import type { TrialChallenge } from '@/types'
 
 /**
  * AI 试炼场——人类审校通过的题目池。
  *
  * 当前为空：18 道候选题目在 ai-trials-draft.ts 中等待专业审校。
- * 审校通过后，将题目逐条从此文件暴露的数组中导入，reviewStatus 改为 reviewed。
+ * 审校通过后，将题目逐条加入此数组，reviewStatus 改为 reviewed。
  *
  * 生产入口：getPublishedTrials() 仅返回 reviewed 题目。
  * 在题目池不为空前，UI 显示"暂无已审核题目"。
  */
+export const AI_TRIALS_REVIEWED: TrialChallenge[] = []
 
-// ⚠️ 仅供本地预览界面——禁止部署。
-// 此题目标题已被加入 scripts/verify-deploy.mjs 的 DRAFT_MARKERS，
-// 生产构建时会被自动拦截（exit 1）。
-// 预览完毕后请删除此对象并还原为空数组。
-export const AI_TRIALS_REVIEWED: TrialChallenge[] = [
-  {
-    id: 'demo-preview-001',
-    reviewStatus: 'reviewed',
-    mode: 'communication',
-    difficulty: 'simple',
-    title: '【演示专用】日常寒暄练习',
-    brief: '在一次短暂的日常对话中，练习如何自然地展示关心，同时保持合适的距离感。',
-    objective: '用 1-2 句话回应对方的问候，既表达真实感受，又不给对方压力。',
-    initialPrompt: '朋友给你发来消息："最近怎么样？感觉你好久没出现了。"',
-    acceptanceCriteria: [
-      '回应简短自然，不超过 80 字',
-      '承认对方的关心',
-      '没有使用攻击性或回避性语言',
-    ],
-    hardChecks: [
-      { type: 'nonEmpty' },
-      { type: 'maxChars', max: 80 },
-      { type: 'safeCommunication' },
-    ],
-  },
-]
+// ─── 仅开发模式预览用 ────────────────────────────────────────────
+// import.meta.env.DEV 在生产构建时被 Vite 替换为 false，
+// Rollup 消除死代码后此对象不会进入 bundle。
+// title 同时加入了 scripts/verify-deploy.mjs 的 DRAFT_MARKERS 作为双重保险。
+const _DEV_DEMO: TrialChallenge = {
+  id: 'demo-preview-001',
+  reviewStatus: 'reviewed',
+  mode: 'promptcraft',
+  difficulty: 'normal',
+  title: '【演示专用】日常寒暄练习',
+  brief: '通过精心设计的提示词，引导模型生成一段自然、有温度的日常问候回应。',
+  objective:
+    '编写一段提示词，让模型以朋友的口吻回应久未联系后的问候，不超过 100 字，语气真诚不矫情。',
+  initialPrompt:
+    '请设计一段 Prompt，让模型扮演一位久未联系的朋友，回应问候"最近怎么样？感觉你好久没出现了。"',
+  acceptanceCriteria: [
+    'Prompt 清晰描述了角色和语气要求',
+    '输出内容不超过 100 字',
+    '语气自然，没有使用攻击性或回避性表达',
+  ],
+  hardChecks: [
+    { type: 'nonEmpty' },
+    { type: 'maxChars', max: 200 },
+    { type: 'safeCommunication' },
+  ],
+}
 
 export function getPublishedTrials(): TrialChallenge[] {
-  return AI_TRIALS_REVIEWED.filter((t) => t.reviewStatus === 'reviewed')
+  const reviewed = AI_TRIALS_REVIEWED.filter((t) => t.reviewStatus === 'reviewed')
+  // 开发模式下题库为空时注入演示题，方便本地预览 UI 交互流程
+  if (reviewed.length === 0 && import.meta.env.DEV) return [_DEV_DEMO]
+  return reviewed
 }

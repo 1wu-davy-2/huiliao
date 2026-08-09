@@ -35,8 +35,8 @@ function renderAt(path: string, seeded = false) {
 }
 
 describe('路由与首次设置门禁', () => {
-  it('未完成首次设置时访问首页被重定向到首次设置', () => {
-    renderAt('/')
+  it('未完成首次设置时访问工作台被重定向到首次设置', () => {
+    renderAt('/home')
     expect(screen.getByRole('heading', { name: '首次设置' })).toBeInTheDocument()
   })
 
@@ -45,9 +45,15 @@ describe('路由与首次设置门禁', () => {
     expect(screen.getByRole('heading', { name: '首次设置' })).toBeInTheDocument()
   })
 
-  it('未知路由回退到首页（未设置时回退到首次设置）', () => {
+  it('未设置时根路由展示落地页而非首次设置', () => {
+    renderAt('/')
+    expect(screen.getByRole('heading', { name: /是成年人最顶级的修养/ })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: '首次设置' })).not.toBeInTheDocument()
+  })
+
+  it('未知路由回退到根路由（未设置时展示落地页）', () => {
     renderAt('/does-not-exist')
-    expect(screen.getByRole('heading', { name: '首次设置' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /是成年人最顶级的修养/ })).toBeInTheDocument()
   })
 
   it('完成后各页面可直接打开', () => {
@@ -55,7 +61,7 @@ describe('路由与首次设置门禁', () => {
     expect(screen.getByRole('heading', { name: '情境库' })).toBeInTheDocument()
   })
 
-  it('完成后访问首页展示工作台而非首次设置', () => {
+  it('完成后访问根路由自动跳转工作台而非首次设置', () => {
     renderAt('/', true)
     expect(screen.getByRole('heading', { name: /今天练哪一场/ })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: '首次设置' })).not.toBeInTheDocument()
@@ -78,7 +84,7 @@ describe('路由与首次设置门禁', () => {
       }),
     )
     render(
-      <MemoryRouter initialEntries={['/']}>
+      <MemoryRouter initialEntries={['/home']}>
         <AppDataProvider>
           <App />
         </AppDataProvider>
@@ -90,7 +96,7 @@ describe('路由与首次设置门禁', () => {
   it('损坏数据时阻止进入应用，并允许确认清除后重新开始', async () => {
     const user = userEvent.setup()
     window.localStorage.setItem(STORAGE_NAMESPACE, '{{{ 无法解析')
-    renderAt('/')
+    renderAt('/home')
 
     expect(screen.getByRole('alert')).toHaveTextContent('本地数据无法读取')
     expect(screen.getByRole('heading', { name: '本地数据需要处理' })).toBeInTheDocument()
