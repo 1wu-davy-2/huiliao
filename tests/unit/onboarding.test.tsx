@@ -35,8 +35,7 @@ describe('首次设置', () => {
   it('困难最多选择两项', async () => {
     const user = userEvent.setup()
     renderOnboarding()
-    await user.click(screen.getByRole('checkbox', { name: /我已年满 18 岁/ }))
-    await user.click(screen.getByRole('button', { name: '继续' }))
+    // 困难与成年确认同处第一步；不勾成年，使 checked 计数只反映困难项
     const options = [
       /不知道怎么开口/,
       /聊天容易冷场/,
@@ -51,29 +50,26 @@ describe('首次设置', () => {
     expect(checked).toHaveLength(2)
   })
 
-  it('未完成三题基线不能进入原则步骤', async () => {
+  it('未完成基线与原则不能完成设置', async () => {
     const user = userEvent.setup()
     renderOnboarding()
     await user.click(screen.getByRole('checkbox', { name: /我已年满 18 岁/ }))
-    await user.click(screen.getByRole('button', { name: '继续' }))
     await user.click(screen.getByRole('checkbox', { name: /不知道怎么开口/ }))
     await user.click(screen.getByRole('button', { name: '继续' }))
-    await user.click(screen.getByRole('button', { name: '继续' }))
-    expect(screen.getByRole('alert')).toHaveTextContent('请完成本步骤')
+    await user.click(screen.getByRole('button', { name: '完成并进入首页' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('请完成全部题目并逐条确认原则')
   })
 
-  it('完整走完四步后写入本地设置', async () => {
+  it('完整走完两步后写入本地设置', async () => {
     const user = userEvent.setup()
     renderOnboarding()
     await user.click(screen.getByRole('checkbox', { name: /我已年满 18 岁/ }))
-    await user.click(screen.getByRole('button', { name: '继续' }))
     await user.click(screen.getByRole('checkbox', { name: /不知道怎么开口/ }))
     await user.click(screen.getByRole('checkbox', { name: /害怕被拒绝/ }))
     await user.click(screen.getByRole('button', { name: '继续' }))
     await user.click(screen.getByRole('radio', { name: /退一步停止追问/ }))
     await user.click(screen.getByRole('radio', { name: /具体的时间、地点/ }))
     await user.click(screen.getByRole('radio', { name: /暂停并确认/ }))
-    await user.click(screen.getByRole('button', { name: '继续' }))
     await user.click(screen.getByRole('checkbox', { name: /真实表达/ }))
     await user.click(screen.getByRole('checkbox', { name: /让对方容易拒绝/ }))
     await user.click(screen.getByRole('checkbox', { name: /拒绝后停止/ }))
