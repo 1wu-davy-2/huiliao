@@ -1190,6 +1190,16 @@ a:hover {
   font-weight: 600;
 }
 
+.filter-group-disabled .filter-label {
+  opacity: 0.38;
+}
+
+.seg-btn:disabled {
+  opacity: 0.32;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 /* ---------- 列表 ---------- */
 
 .list-row {
@@ -1266,6 +1276,58 @@ a:hover {
   gap: 12px;
   align-items: center;
 }
+
+/* ── 情境页紧凑信息条 sp-* ── */
+.sp-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.sp-exit { flex-shrink: 0; }
+
+.sp-info {
+  background: var(--surface-container-low);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 8px;
+}
+.sp-info-char {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.sp-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.sp-char-name { font-size: 14px; font-weight: 600; color: var(--ink); }
+.sp-char-tag  { font-size: 11px !important; padding: 2px 6px !important; }
+.sp-char-tagline { font-size: 13px; color: var(--muted); }
+.sp-intro {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+  margin: 0;
+}
+.sp-goals {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--ink);
+}
+.sp-goals svg { color: var(--primary); flex-shrink: 0; position: relative; top: 1px; }
+.sp-dot { color: var(--line-strong); margin: 0 2px; }
 
 .node-chip {
   font-size: 13px;
