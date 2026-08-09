@@ -9,7 +9,7 @@ npm ci                  # Install dependencies (Node 22.x required)
 npm run dev             # Vite dev server → http://localhost:5173
 npm run build           # tsc -b && vite build → dist/
 npm run preview         # Preview production build locally
-npm test                # All Vitest unit tests (541 tests / 26 files, 2026-08-08 实测)
+npm test                # All Vitest unit tests (597 tests / 29 files, 2026-08-09 实测)
 npm run test:watch      # Vitest watch mode
 npm run lint            # ESLint (TypeScript + React hooks)
 npm run typecheck:api   # tsc against api/ only (separate project, not in tsc -b)
@@ -107,13 +107,34 @@ Invariants to preserve when editing anything under `api/` or `src/lib/ai/`:
 Two traps in `urlPolicy.ts` itself:
 
 - **It contains literal control bytes, not escapes** — a raw NUL inside the `UNSAFE_PATH` character class and a raw NUL–`0x1f` range in the control-character guard. Git therefore classifies the file as binary (`git diff` shows no hunks) and `grep`/`rg` skip it entirely, so a content search for its own exports silently returns nothing. Any editor or formatter that normalizes input will eat those bytes and weaken both checks with no visible diff. Rewriting them as `\x00` and `\x00-\x1f` escapes is behavior-preserving and removes the hazard.
-- **It has no tests.** Nothing under `tests/` references `urlPolicy`, `resolveAndPin`, or `classifyAddress`, even though `ResolveDeps.lookup` exists precisely so the DNS stage can be tested without touching the network. It is the least-covered security-critical module in the repo; cover the pinning and whole-host-rejection paths with any change here.
+- **Tests live in `tests/unit/api-url-policy.test.ts`** (alongside `api-upstream`, `api-providers`, `api-handlers`). `ResolveDeps.lookup` is injected so the DNS stage is testable without touching the network. When changing any part of the policy, add or update tests for the affected path — pinning, whole-host-rejection, and the control-byte guard are the most critical.
 
-The reviewed trial pool (`AI_TRIALS_REVIEWED`) is currently **empty**: all 18 candidate challenges sit in `ai-trials-draft.ts` awaiting professional review, so the UI shows an empty-pool state. That is intended, not a bug to route around.
+The reviewed trial pool (`AI_TRIALS_REVIEWED`) is currently **empty**: all 18 candidate challenges sit in `ai-trials-draft.ts` awaiting professional review, so the UI shows an empty-pool state. That is intended, not a bug to route around. In dev mode (`import.meta.env.DEV`), `getPublishedTrials()` injects a `_DEV_DEMO` challenge when the pool is empty, so the AI trial UI is fully exercisable locally. The demo object lives in `src/content/ai-trials.ts` and is dead-code-eliminated from production bundles by Vite/Rollup.
 
 ### Routing & auth gate
 
-In `src/app/App.tsx`. Corrupt storage short-circuits to `StorageRecoveryPage` before any routing. `/onboarding` is ungated and sets `isAdultConfirmed` + `onboardingCompleted`; every other route sits behind `<RequireOnboarding>`, which redirects unless **both** flags are true. Routes: `/`, `/practice`, `/practice/:id`, `/lab`, `/lab/ai`, `/progress`, `/settings`, `/privacy`, with `*` → `/`.
+In `src/app/App.tsx`. Corrupt storage short-circuits to `StorageRecoveryPage` before any routing.
+
+**`/` and `/onboarding` are both ungated.** `/` is the marketing `LandingPage` (`src/features/landing/`), which self-redirects to `/home` once **both** `onboardingCompleted` and `isAdultConfirmed` are true — so returning users never see it. `/onboarding` sets those two flags and then navigates to `/home` (not `/`, which would bounce through the landing redirect). Every other route sits behind `<RequireOnboarding>`, which redirects to `/onboarding` unless both flags are true.
+
+Routes: `/` (landing, ungated), `/onboarding` (ungated), then gated: `/home` (the workbench, formerly `/`), `/practice`, `/practice/:id`, `/lab`, `/lab/ai`, `/progress`, `/settings`, `/privacy`, with `*` → `/`.
+
+The `/` → `/home` move is load-bearing for tests: an assertion that "an unonboarded visit redirects to onboarding" must target `/home`, not `/`, or it will render the landing page and fail. `NAV_ITEMS` and `PAGE_CONTEXT` in `AppLayout.tsx` key off `/home` too.
+
+Onboarding is **2 steps**, not 4 (`STEPS = ['了解与选择', '基线确认']`). Step 0 pairs the 18+ checkbox with challenge selection; step 1 pairs the 3 baseline questions (radios) with the 3 interaction principles (checkboxes). The final button reads `完成并进入首页`. Step-0 validation needs `adultConfirmed && challenges.length > 0`, so a test that ticks only the 18+ box cannot advance.
+
+### Local dev of the `api/` functions
+
+`vite.config.ts` registers `devApiPlugin()` (`apply: 'serve'`), which serves the Vercel functions off the ordinary Vite dev server — `npm run dev` alone is enough, no `vercel dev` and no second process. It intercepts `/api/*`, buffers the body, and calls the real handler through `server.ssrLoadModule('/api/ai/turn.ts')`, so `api/` TypeScript runs untranspiled-by-hand and edits hot-reload.
+
+Two things the plugin does that production does not:
+
+- **Backfills a missing `Origin` header** from `Host`, because `originAllowed()` rejects header-less requests and curl/Postman send none by default. On Vercel the browser always supplies it.
+- **`api/_lib/challenges.ts` injects the `_DEV_DEMO` challenge** into its server-side reviewed map when `process.env.NODE_ENV !== 'production'` and the pool is empty. Without it every request dies at the `hasReviewedPool()` publish gate. This mirrors the client-side `getPublishedTrials()` injection; keep the two in sync.
+
+Both are dev-only by construction — do not let either leak into a production path.
+
+**Custom `baseUrl` must carry its full path prefix** (`https://host/v1`, `.../v1beta`). `joinPath` only appends the adapter path (`/messages`, `/chat/completions`); it never guesses a version segment, since Gemini uses `/v1beta` and self-hosted proxies may sit at the root. Tools like cc-switch auto-append `/v1`, so their configs cannot be pasted in verbatim. A missing prefix typically surfaces as `UPSTREAM_BAD_RESPONSE`: many gateways answer `POST /messages` with their own HTML homepage at **HTTP 200**, which clears every status check and only fails at `parseJsonOnce`.
 
 ### CSS system
 
@@ -127,11 +148,13 @@ Scenarios, privacy topics, and trial challenges carry `reviewStatus: 'draft' | '
 
 `vercel.json`: SPA rewrite, `api/ai/**/*.ts` as `nodejs22.x` functions with `maxDuration: 30`, strict CSP (`script-src 'self'`, `connect-src 'self'` — no external scripts), `nosniff`, `DENY`, `no-referrer`, restrictive `Permissions-Policy`, and 1-year immutable caching for `/assets/`. `buildCommand` is `npm run verify:deploy`.
 
-`scripts/verify-deploy.mjs` gates the artifact: LICENSE present, hashed asset filenames, all 8 avatars + hero SVG, favicon set (validating the ICO magic bytes and that `apple-touch-icon.png` is exactly 180×180), no `.env`, no credential-shaped strings or absolute Windows paths in bundles, and no draft content markers.
+`scripts/verify-deploy.mjs` gates the artifact: LICENSE present, hashed asset filenames, all 8 avatars + hero SVG, favicon set (validating the ICO magic bytes and that `apple-touch-icon.png` is exactly 180×180), no `.env`, no credential-shaped strings or absolute Windows paths in bundles, and no draft content markers. The 8 avatar SVGs and `public/hero.svg` are programmatically generated — run `node scripts/generate-assets.mjs` to regenerate them. The favicon set is generated by `node scripts/generate-favicon.mjs`.
 
 `tests/unit/deploy-config.test.ts` asserts these deployment invariants at unit-test speed — update it alongside any change to `vercel.json`, `package.json` scripts, or the ignore files.
 
 Preview URLs, `*.vercel.app`, and custom domains are separate origins with separate `localStorage`. Users must export before switching domains.
+
+**Current deploy status (2026-08-08):** Production release is **BLOCKED** pending: Vercel Preview deployment + WAF/rate-limiting configuration (requires project-owner Vercel login), keyboard manual acceptance, external professional content review (s14–s18 scenarios + 18 AI trial candidates), legal and sexual-health copy review, and Vercel AUP confirmation. All automated checks pass; blockers are operational and content-review items only.
 
 ## Conventions
 
