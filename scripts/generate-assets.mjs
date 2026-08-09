@@ -99,9 +99,100 @@ const HERO = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" role
 </svg>
 `
 
+// ---------- 品牌标记与入口页插画 ----------
+// 三者均为纯装饰：界面侧以 <img alt="" aria-hidden="true"> 引入，
+// 因此 SVG 内部不写 role/aria-label，避免被内联时重复播报。
+// 所有坐标为固定表，不使用随机数，重复生成结果逐字节一致。
+
+// 品牌标记：描边对话气泡（对应 docs/design/stitch/logo/screen.png）。
+// 描边色取 --primary-container(#7faf7b)：该色在浅底约 2.4:1，
+// 按 tokens.css 注释只可用于描边/装饰，不可承载文字。
+const BRAND_MARK = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <path
+    d="M64 22 C87 22 106 38 106 58 C106 70 100 79 91 85 C95 93 100 101 99 106 C97 111 90 107 84 102 C78 97 74 93 70 90 C68 90 66 91 64 91 C41 91 22 78 22 58 C22 38 41 22 64 22 Z"
+    fill="none" stroke="#7faf7b" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+`
+
+// 消息诊断：整齐的文字行向右逐步碎成颗粒，隐喻「把草稿拆开看」。
+function diagnoseSvg() {
+  const ROWS = [176, 148, 192, 132, 164]
+  const DASHES = [30, 24, 18]
+  const DASH_OPACITY = [0.55, 0.4, 0.28]
+  const DOTS = [
+    { r: 6, fill: '#7faf7b', opacity: 0.85 },
+    { r: 5, fill: '#3c683b', opacity: 0.7 },
+    { r: 4, fill: '#7faf7b', opacity: 0.55 },
+    { r: 3, fill: '#3c683b', opacity: 0.4 },
+    { r: 2.5, fill: '#7faf7b', opacity: 0.28 },
+  ]
+  const parts = []
+  ROWS.forEach((lineWidth, index) => {
+    const y = 54 + index * 44
+    let x = 48
+    parts.push(
+      `<rect x="${x}" y="${y - 4.5}" width="${lineWidth}" height="9" rx="4.5" fill="#c2c9bd" opacity="0.85"/>`,
+    )
+    x += lineWidth + 16
+    DASHES.forEach((dashWidth, dashIndex) => {
+      parts.push(
+        `<rect x="${x}" y="${y - 4.5}" width="${dashWidth}" height="9" rx="4.5" fill="#c2c9bd" opacity="${DASH_OPACITY[dashIndex]}"/>`,
+      )
+      x += dashWidth + 12
+    })
+    x += 8
+    DOTS.forEach((dot, dotIndex) => {
+      parts.push(
+        `<circle cx="${x + dotIndex * 18}" cy="${y}" r="${dot.r}" fill="${dot.fill}" opacity="${dot.opacity}"/>`,
+      )
+    })
+  })
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300">
+  ${parts.join('\n  ')}
+</svg>
+`
+}
+
+// AI 情景模拟：两个抽象人形相对而坐，中间是三条强弱不同的连接线。
+function simulateSvg() {
+  const figure = (cx, fill) =>
+    [
+      `<circle cx="${cx}" cy="110" r="26" fill="${fill}"/>`,
+      `<path d="M ${cx - 36} 208 C ${cx - 36} 162 ${cx - 18} 148 ${cx} 148 C ${cx + 18} 148 ${cx + 36} 162 ${cx + 36} 208 Z" fill="${fill}"/>`,
+    ].join('\n  ')
+  const LINKS = [
+    { dy: -26, width: 3, opacity: 0.9 },
+    { dy: 0, width: 2.5, opacity: 0.6 },
+    { dy: 26, width: 2, opacity: 0.38 },
+  ]
+  const links = LINKS.map(
+    (link) =>
+      `<path d="M 176 ${162 + link.dy} Q 240 ${132 + link.dy} 304 ${162 + link.dy}" fill="none" stroke="#7faf7b" stroke-width="${link.width}" stroke-linecap="round" opacity="${link.opacity}"/>`,
+  )
+  const beads = [216, 240, 264].map(
+    (cx, index) =>
+      `<circle cx="${cx}" cy="${index === 1 ? 141 : 144}" r="4" fill="#3c683b" opacity="0.5"/>`,
+  )
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300">
+  <rect x="40" y="242" width="400" height="8" rx="4" fill="#c2c9bd" opacity="0.35"/>
+  ${figure(132, '#3c683b')}
+  ${figure(348, '#50616b')}
+  ${links.join('\n  ')}
+  ${beads.join('\n  ')}
+</svg>
+`
+}
+
+const IMAGE_DIR = join(ROOT, 'public', 'images')
+
 mkdirSync(AVATAR_DIR, { recursive: true })
 for (const c of CHARACTERS) {
   writeFileSync(join(AVATAR_DIR, `${c.id}.svg`), avatarSvg(c))
 }
-writeFileSync(join(ROOT, 'public', 'images', 'hero-communication.svg'), HERO)
-console.log(`已生成 ${CHARACTERS.length} 个头像与主图：${AVATAR_DIR}`)
+writeFileSync(join(IMAGE_DIR, 'hero-communication.svg'), HERO)
+writeFileSync(join(IMAGE_DIR, 'brand-mark.svg'), BRAND_MARK)
+writeFileSync(join(IMAGE_DIR, 'illus-diagnose.svg'), diagnoseSvg())
+writeFileSync(join(IMAGE_DIR, 'illus-simulate.svg'), simulateSvg())
+console.log(
+  `已生成 ${CHARACTERS.length} 个头像、主图、品牌标记与 2 张入口插画：${IMAGE_DIR}`,
+)

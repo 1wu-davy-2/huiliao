@@ -22,6 +22,14 @@ async function selectContext(user: ReturnType<typeof userEvent.setup>, status = 
 }
 
 describe('消息实验室', () => {
+  it('顶部面包屑返回训练中心', () => {
+    renderLab()
+    const back = screen.getByRole('link', { name: '返回训练中心' })
+    expect(back).toHaveAttribute('href', '/lab')
+    // 原两页签导航已被入口页取代，此处不应再出现 AI 试炼场页签
+    expect(screen.queryByRole('link', { name: 'AI 试炼场' })).not.toBeInTheDocument()
+  })
+
   it('未选择完整上下文时不能诊断', async () => {
     const user = userEvent.setup()
     renderLab()

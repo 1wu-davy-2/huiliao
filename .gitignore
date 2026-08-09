@@ -11,3 +11,7 @@ npm-debug.log*
 .vercel/
 *.tsbuildinfo
 /.claude/
+
+# 设计稿只允许放在 docs/design/stitch/：public/ 会被 Vite 原样复制到 dist/，
+# 触发 scripts/verify-deploy.mjs 的 dist/stitch_ 检查并阻断部署。
+public/stitch_/

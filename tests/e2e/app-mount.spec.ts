@@ -15,7 +15,21 @@ import { expect, test } from '@playwright/test'
  * 且没有任何未捕获页面错误。任何模块级循环依赖或首屏抛错都会在此失败。
  */
 
-const ROUTES = ['/', '/practice', '/lab', '/lab/ai', '/progress', '/settings', '/privacy']
+// 复盘路由带一个不存在的 sessionId：空状态必须安静地渲染，
+// 不得 throw、不得 console.error，否则下面两条断言会红。
+const ROUTES = [
+  '/',
+  '/practice',
+  '/lab',
+  '/lab/message',
+  '/lab/ai',
+  '/lab/ai/review/no-such-session',
+  '/progress',
+  '/settings',
+  '/privacy',
+  '/terms',
+  '/safety',
+]
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {

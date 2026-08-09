@@ -1,7 +1,18 @@
 import { expect, test } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 
-const PAGES = ['/', '/practice', '/lab', '/practice/s02']
+// '/lab' 现为入口页，消息诊断迁到 '/lab/message'，两者都要留截图与 axe 覆盖。
+// 装饰性顶栏元素与新增的 <img> 品牌标记若回归（可聚焦的 aria-hidden、缺 alt），
+// 会在下方 axe 扫描里以 aria-hidden-focus / image-alt 暴露。
+const PAGES = [
+  '/',
+  '/practice',
+  '/lab',
+  '/lab/message',
+  '/practice/s02',
+  '/terms',
+  '/safety',
+]
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {

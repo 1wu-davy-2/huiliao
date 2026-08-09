@@ -26,10 +26,12 @@ test('移动端：底部导航、筛选抽屉与场景练习', async ({ page }) 
   // 底部导航可见且可用
   const bottomNav = page.getByRole('navigation', { name: '主导航（移动端）' })
   await expect(bottomNav).toBeVisible()
-  await bottomNav.getByRole('link', { name: '练习' }).click()
-  await expect(page).toHaveURL(/\/practice$/)
+  // 导航已收拢为 4 项，练习与实验室合并进「训练中心」（入口页 /lab）
+  await bottomNav.getByRole('link', { name: '训练中心' }).click()
+  await expect(page).toHaveURL(/\/lab$/)
 
-  // 移动端筛选抽屉
+  // 移动端筛选抽屉。直接进情境库，不经入口页文案，避免与入口页改版耦合
+  await page.goto('/practice')
   await page.getByRole('button', { name: /筛选/ }).click()
   await expect(page.getByRole('dialog')).toBeVisible()
   await page.getByRole('button', { name: '初次约会' }).click()

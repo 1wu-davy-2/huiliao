@@ -339,7 +339,7 @@ export default function AiTrialPage() {
       <main className="ai-trial-page">
         <LabTabs />
         <div className="ai-empty">
-          <h2>AI 试炼场</h2>
+          <h1>AI 试炼场</h1>
           <p>暂无已审核题目。题目池正在专业审校中，通过后将自动开放。</p>
         </div>
       </main>
@@ -352,7 +352,7 @@ export default function AiTrialPage() {
 
       {view === 'setup' && (
         <div className="ai-setup">
-          <h2>AI 试炼场</h2>
+          <h1>AI 试炼场</h1>
           <p className="ai-subtitle">使用你自己的模型连接，进行可重复的随机挑战</p>
 
           {/* 模式 & 难度 */}
@@ -531,16 +531,16 @@ function TrialActiveView({
   if (state.phase === 'evaluating' || state.phase === 'complete') {
     return (
       <div className="ai-result">
-        <h2>试炼完成</h2>
+        <h1>试炼完成</h1>
         <p className="muted">第 {state.roundsUsed} / {state.roundLimit} 轮</p>
         {state.roundsUsed >= state.roundLimit && <p className="ai-status">已达到你设定的轮数</p>}
         <section className="card">
-          <h3>硬规则检查</h3>
+          <h2>硬规则检查</h2>
           <p>得分: {state.hardScore} / 100</p>
         </section>
         {evalResult ? (
           <section className="card">
-            <h3>模型自评</h3>
+            <h2>模型自评</h2>
             <p className="ai-disclaimer">模型自评，仅供比较，不是客观基准。本次自评额外调用了 1 次模型。</p>
             <p>分数: {evalResult.score} / 100</p>
             {evalResult.strengths.length > 0 && <p>做得好的: {evalResult.strengths.join('；')}</p>}
@@ -559,7 +559,7 @@ function TrialActiveView({
   return (
     <div className="ai-active">
       <div className="ai-active-header">
-        <h2>{challenge.title}</h2>
+        <h1>{challenge.title}</h1>
         <p className="muted">第 {state.roundsUsed} / {state.roundLimit} 轮</p>
       </div>
 
@@ -583,7 +583,7 @@ function TrialActiveView({
           <p className="ai-brief">{challenge.brief}</p>
           {challenge.testInput && (
             <div className="card">
-              <h4>固定测试输入</h4>
+              <h3>固定测试输入</h3>
               <pre className="ai-test-input">{challenge.testInput}</pre>
             </div>
           )}
@@ -678,7 +678,7 @@ function HistoryView({
   return (
     <div className="ai-history">
       <button className="btn btn-ghost" onClick={onBack}>← 返回设置</button>
-      <h2>试炼历史</h2>
+      <h1>试炼历史</h1>
       <p className="ai-hint">完整对话只保存在当前浏览器 IndexedDB，最近 20 次或 25 MB，达到上限自动清理最旧记录。</p>
       {historyError && (
         <p className="ai-error" role="alert">{historyError}</p>

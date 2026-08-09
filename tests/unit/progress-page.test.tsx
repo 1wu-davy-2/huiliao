@@ -5,6 +5,8 @@ import { MemoryRouter } from 'react-router-dom'
 import { AppDataProvider } from '@/lib/settings/AppDataContext'
 import { STORAGE_NAMESPACE } from '@/lib/storage/storage'
 import ProgressPage from '@/features/progress/ProgressPage'
+import { SkillMetricCards } from '@/components/ui/SkillMetricCards'
+import { SKILL_KEYS, SKILL_LABELS } from '@/types'
 
 function seedData() {
   window.localStorage.setItem(
@@ -97,5 +99,81 @@ describe('进度页', () => {
       favorites: string[]
     }
     expect(stored.favorites).toEqual([])
+  })
+
+  it('五维能力区改用 SkillMetricCards，按 /100 展示聚合分', () => {
+    seedData()
+    renderProgress()
+    const cards = screen.getByRole('group', { name: '五维能力评分' })
+    // 两条记录的均值（Math.round）：清晰 70 / 真诚 68 / 倾听 68 / 分寸 62 / 边界 51
+    const expected: Record<string, number> = {
+      clarity: 70,
+      authenticity: 68,
+      listening: 68,
+      pace: 62,
+      boundaries: 51,
+    }
+    for (const key of SKILL_KEYS) {
+      expect(within(cards).getByText(SKILL_LABELS[key])).toBeInTheDocument()
+      expect(within(cards).getAllByText(String(expected[key])).length).toBeGreaterThanOrEqual(1)
+    }
+    expect(within(cards).getAllByText('/ 100')).toHaveLength(5)
+  })
+
+  it('无记录时不渲染评分卡', () => {
+    renderProgress()
+    expect(screen.queryByRole('group', { name: '五维能力评分' })).not.toBeInTheDocument()
+  })
+})
+
+describe('SkillMetricCards', () => {
+  const scores = { clarity: 81, authenticity: 74, listening: 66, pace: 59, boundaries: 42 }
+
+  it('渲染五个维度，均为 /100 刻度且不换算成 /10', () => {
+    render(<SkillMetricCards scores={scores} />)
+    const cards = screen.getByRole('group', { name: '五维能力评分' })
+    for (const key of SKILL_KEYS) {
+      expect(within(cards).getByText(SKILL_LABELS[key])).toBeInTheDocument()
+      expect(within(cards).getByText(String(scores[key]))).toBeInTheDocument()
+    }
+    expect(within(cards).getAllByText('/ 100')).toHaveLength(5)
+    // 不引入第二套分制：不出现 /10 后缀，也不出现 8.1 这类换算值
+    expect(within(cards).queryByText('/ 10')).not.toBeInTheDocument()
+    expect(within(cards).queryByText('8.1')).not.toBeInTheDocument()
+  })
+
+  it('用设计稿否决过的轴名不出现（保留 SKILL_LABELS）', () => {
+    render(<SkillMetricCards scores={scores} />)
+    expect(screen.queryByText('表达')).not.toBeInTheDocument()
+    expect(screen.queryByText('策略')).not.toBeInTheDocument()
+  })
+
+  it('计量条宽度直接取分值百分比', () => {
+    const { container } = render(<SkillMetricCards scores={scores} />)
+    const fills = container.querySelectorAll<HTMLElement>('.meter-fill')
+    expect(fills).toHaveLength(5)
+    expect(Array.from(fills).map((el) => el.style.width)).toEqual([
+      '81%',
+      '74%',
+      '66%',
+      '59%',
+      '42%',
+    ])
+  })
+
+  it('0 分与 100 分都不越界', () => {
+    const { container } = render(
+      <SkillMetricCards
+        scores={{ clarity: 0, authenticity: 100, listening: 0, pace: 100, boundaries: 0 }}
+      />,
+    )
+    const fills = container.querySelectorAll<HTMLElement>('.meter-fill')
+    expect(Array.from(fills).map((el) => el.style.width)).toEqual([
+      '0%',
+      '100%',
+      '0%',
+      '100%',
+      '0%',
+    ])
   })
 })

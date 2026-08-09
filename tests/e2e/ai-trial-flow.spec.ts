@@ -90,10 +90,13 @@ test.describe('AI 试炼场 · 发布门', () => {
 
   test('实验室页提供到 AI 试炼场的二级入口，且未新增第六个底部导航项', async ({ page }) => {
     await page.goto('/lab')
-    await expect(page.getByRole('heading', { name: '消息实验室' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: '训练中心' })).toBeVisible()
 
-    const aiLink = page.getByRole('link', { name: 'AI 试炼场' })
+    // 入口页每节是一个具名 region；按 region 取作用域，避免 strict-mode 命中多个链接
+    const aiEntry = page.getByRole('region', { name: 'AI 情景模拟' })
+    const aiLink = aiEntry.getByRole('link', { name: '选择场景' })
     await expect(aiLink).toBeVisible()
+    await expect(aiLink).toHaveAttribute('href', '/lab/ai')
 
     // 底部导航仍是五项
     const bottomNav = page.locator('.bottom-nav')

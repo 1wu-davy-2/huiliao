@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowRight, Clock, NotebookPen } from 'lucide-react'
+import { ArrowRight, Clock, FileText, NotebookPen } from 'lucide-react'
 import { useAppData } from '@/lib/settings/AppDataContext'
 import { SCENARIOS, getScenario } from '@/content'
 import { CHALLENGE_OPTIONS, recommendScenario } from '@/lib/skills/skills'
@@ -52,7 +52,11 @@ export default function HomePage() {
             {challengeLabels.length > 0 && (
               <span
                 className="muted"
-                style={{ fontSize: 14, fontWeight: 400, marginLeft: 8 }}
+                style={{
+                  fontSize: 'var(--text-label-md)',
+                  fontWeight: 400,
+                  marginLeft: 8,
+                }}
               >
                 训练目标：{challengeLabels.map((c) => c.label).join('、')}
               </span>
@@ -71,7 +75,15 @@ export default function HomePage() {
           </div>
           <div className="task-row" style={{ paddingBottom: 24, borderBottom: '1px solid var(--line)' }}>
             <div style={{ flex: '1 1 320px', minWidth: 0 }}>
-              <p className="bold" style={{ fontSize: 22, lineHeight: 1.35, fontFamily: 'var(--font-display)' }}>
+              {/* 设计稿 _1 今日任务标题 = headline-md */}
+              <p
+                className="bold"
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 'var(--text-headline-md)',
+                  lineHeight: 'var(--leading-headline-md)',
+                }}
+              >
                 {recommended
                   ? recommended.title
                   : hasProgress
@@ -154,7 +166,9 @@ export default function HomePage() {
 
         <section className="section" aria-labelledby="recent-title">
           <div className="section-head">
-            <h2 className="section-title" id="recent-title">
+            {/* .eyebrow-row 提供 flex + gap + svg 配色，标题文本仍是唯一可及名称 */}
+            <h2 className="section-title eyebrow-row" id="recent-title">
+              <FileText size={16} aria-hidden="true" />
               最近复盘
             </h2>
             <Link to="/progress" className="small">

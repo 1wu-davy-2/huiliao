@@ -80,18 +80,49 @@ for (const name of AVATARS) {
   const p = join(DIST, 'images', 'avatars', `${name}.svg`)
   check(existsSync(p) && statSync(p).size > 100, `dist/images/avatars/${name}.svg 缺失或为空`)
 }
-check(existsSync(join(DIST, 'images', 'hero-communication.svg')), 'dist/images/hero-communication.svg 缺失')
+// 根级插画。品牌标记在每个路由的侧栏渲染，缺失即全站视觉损坏且会让
+// app-mount / visual 两个 e2e 闸门因 404 console error 全红，故一律带尺寸断言。
+const ROOT_IMAGES = [
+  'hero-communication.svg',
+  'brand-mark.svg',
+  'illus-diagnose.svg',
+  'illus-simulate.svg',
+]
+for (const name of ROOT_IMAGES) {
+  const p = join(DIST, 'images', name)
+  check(existsSync(p) && statSync(p).size > 100, `dist/images/${name} 缺失或为空`)
+}
+
+// dist/images 下的全部 SVG，供第 3、5 节扫描。
+// public/ 由 Vite 原样复制、不过打包器，因此这些文件不在 dist/assets 里，
+// 之前完全未被敏感信息与草稿标记检查覆盖。
+const imagesDir = join(DIST, 'images')
+const avatarsDir = join(imagesDir, 'avatars')
+const collectSvg = (dir, prefix) =>
+  existsSync(dir)
+    ? readdirSync(dir)
+        .filter((f) => f.endsWith('.svg'))
+        .map((f) => ({ label: `${prefix}${f}`, path: join(dir, f) }))
+    : []
+const svgFiles = [
+  ...collectSvg(imagesDir, 'images/'),
+  ...collectSvg(avatarsDir, 'images/avatars/'),
+]
 
 // 3. 敏感信息扫描（只匹配真实凭据形态，避免 React 内部 input type 枚举等误报）
 const SENSITIVE = /api[_-]?key\s*[:=]|api[_-]?secret|bearer\s+[A-Za-z0-9]{8,}|BEGIN (RSA|OPENSSH|EC|PRIVATE) KEY/i
 const ABS_PATH = /[A-Za-z]:\\[^"']+|\\Users\\[^"']+/i
-for (const file of [...jsFiles, ...cssFiles]) {
-  const content = readFileSync(join(assetsDir, file), 'utf8')
+const SCAN_TARGETS = [
+  ...[...jsFiles, ...cssFiles].map((f) => ({ label: f, path: join(assetsDir, f) })),
+  ...svgFiles,
+]
+for (const { label, path } of SCAN_TARGETS) {
+  const content = readFileSync(path, 'utf8')
   if (SENSITIVE.test(content)) {
-    failures.push(`${file} 可能包含敏感信息（API Key/Token/密码字样）`)
+    failures.push(`${label} 可能包含敏感信息（API Key/Token/密码字样）`)
   }
   if (ABS_PATH.test(content)) {
-    failures.push(`${file} 可能包含本机绝对路径`)
+    failures.push(`${label} 可能包含本机绝对路径`)
   }
 }
 check(!existsSync(join(DIST, '.env')), 'dist 中出现 .env')
@@ -126,6 +157,8 @@ if (existsSync(applePath)) {
 //    必须覆盖全部草稿：scenarios-draft.ts 的 s14–s18 标题与 ai-trials-draft.ts 的 18 道题标题。
 //    新增草稿时必须同步把其唯一标题加到这里，否则发布门不会拦截泄漏。
 const DRAFT_MARKERS = [
+  // ⚠️ 演示专用题目（预览界面用，禁止部署）
+  '【演示专用】日常寒暄练习',
   // s14–s18（成年人情趣边界草稿场景）
   '成年人自愿情趣的事前边界协商',
   '绿黄红信号与中途撤回',
@@ -152,11 +185,16 @@ const DRAFT_MARKERS = [
   '格式化约束——生成合法 CSV 并处理特殊字符',
   '链式约束——多轮条件输出格式',
 ]
-for (const file of jsFiles) {
-  const content = readFileSync(join(assetsDir, file), 'utf8')
+// SVG 也纳入：插画若嵌入 <text> 草稿文案，原先只扫 JS 的实现会漏过。
+const DRAFT_SCAN_TARGETS = [
+  ...jsFiles.map((f) => ({ label: f, path: join(assetsDir, f) })),
+  ...svgFiles,
+]
+for (const { label, path } of DRAFT_SCAN_TARGETS) {
+  const content = readFileSync(path, 'utf8')
   for (const marker of DRAFT_MARKERS) {
     if (content.includes(marker)) {
-      failures.push(`${file} 包含 draft 内容标记：${marker}`)
+      failures.push(`${label} 包含 draft 内容标记：${marker}`)
     }
   }
 }
@@ -166,4 +204,8 @@ if (failures.length > 0) {
   for (const f of failures) console.error(`  ✗ ${f}`)
   process.exit(1)
 }
-console.log(`部署产物校验通过：${jsFiles.length} JS、${cssFiles.length} CSS、${AVATARS.length} 头像、入口与敏感信息检查 OK`)
+console.log(
+  `部署产物校验通过：${jsFiles.length} JS、${cssFiles.length} CSS、` +
+    `${AVATARS.length} 头像、${ROOT_IMAGES.length} 根级插画、` +
+    `${svgFiles.length} SVG 已过敏感信息与草稿标记扫描`,
+)

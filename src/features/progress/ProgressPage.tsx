@@ -4,6 +4,7 @@ import { useAppData } from '@/lib/settings/AppDataContext'
 import { getScenario } from '@/content'
 import { aggregateSkillScores, boundaryAccuracy } from '@/lib/skills/skills'
 import { SkillRadar } from '@/components/ui/SkillRadar'
+import { SkillMetricCards } from '@/components/ui/SkillMetricCards'
 import { SKILL_LABELS, type SkillKey } from '@/types'
 
 export default function ProgressPage() {
@@ -53,43 +54,8 @@ export default function ProgressPage() {
               <div style={{ maxWidth: 320, margin: '0 auto' }}>
                 <SkillRadar scores={skills} />
               </div>
-              <div
-                className="mt-24"
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-                  gap: 12,
-                }}
-              >
-                {(Object.keys(SKILL_LABELS) as SkillKey[]).map((key) => (
-                  <div
-                    key={key}
-                    style={{
-                      padding: '12px 0',
-                      borderTop: '1px solid var(--line)',
-                    }}
-                  >
-                    <div className="small muted">{SKILL_LABELS[key]}</div>
-                    <div
-                      style={{
-                        fontFamily: 'var(--font-display)',
-                        fontSize: 24,
-                        fontWeight: 700,
-                        letterSpacing: '-0.01em',
-                        lineHeight: 1.1,
-                        marginTop: 4,
-                      }}
-                    >
-                      {skills[key]}
-                      <span
-                        className="muted"
-                        style={{ fontSize: 13, fontWeight: 500, marginLeft: 4 }}
-                      >
-                        / 100
-                      </span>
-                    </div>
-                  </div>
-                ))}
+              <div className="mt-24">
+                <SkillMetricCards scores={skills} />
               </div>
             </>
           ) : (

@@ -7,11 +7,15 @@ import OnboardingPage from '@/features/onboarding/OnboardingPage'
 import HomePage from '@/features/home/HomePage'
 import PracticePage from '@/features/practice/PracticePage'
 import ScenarioPage from '@/features/practice/ScenarioPage'
+import LabHubPage from '@/features/lab/LabHubPage'
 import MessageLabPage from '@/features/lab/MessageLabPage'
 import AiTrialPage from '@/features/lab/AiTrialPage'
+import TrialReviewPage from '@/features/lab/TrialReviewPage'
 import ProgressPage from '@/features/progress/ProgressPage'
 import SettingsPage from '@/features/settings/SettingsPage'
 import PrivacyPage from '@/features/privacy/PrivacyPage'
+import TermsPage from '@/features/legal/TermsPage'
+import SafetyPage from '@/features/legal/SafetyPage'
 import { Modal } from '@/components/ui/Modal'
 
 function StorageRecoveryPage() {
@@ -159,11 +163,15 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/practice" element={<PracticePage />} />
         <Route path="/practice/:id" element={<ScenarioPage />} />
-        <Route path="/lab" element={<MessageLabPage />} />
+        <Route path="/lab" element={<LabHubPage />} />
+        <Route path="/lab/message" element={<MessageLabPage />} />
         <Route path="/lab/ai" element={<AiTrialPage />} />
+        <Route path="/lab/ai/review/:sessionId" element={<TrialReviewPage />} />
         <Route path="/progress" element={<ProgressPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/safety" element={<SafetyPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

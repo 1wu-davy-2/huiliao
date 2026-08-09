@@ -21,7 +21,8 @@ test.beforeEach(async ({ page }) => {
 })
 
 test('消息实验室正常诊断并完成自行重写', async ({ page }) => {
-  await page.goto('/lab')
+  // /lab 现为训练中心入口页，消息诊断移到 /lab/message
+  await page.goto('/lab/message')
   await expect(page.getByText(/先做脱敏/)).toBeVisible()
 
   // 载入安全示例（自动填入上下文与草稿）
@@ -46,7 +47,7 @@ test('消息实验室正常诊断并完成自行重写', async ({ page }) => {
 })
 
 test('危险意图被拦截且不出现危险改写', async ({ page }) => {
-  await page.goto('/lab')
+  await page.goto('/lab/message')
   await page.selectOption('#lab-stage', 'chatting')
   await page.selectOption('#lab-purpose', 'invite')
   await page.selectOption('#lab-status', 'positive')

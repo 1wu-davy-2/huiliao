@@ -151,15 +151,23 @@ a:hover {
   min-height: var(--topbar-height);
 }
 
-/* 描边气泡：无实心底色。32px 尺寸下用 --primary 而非 logo 稿的浅鼠尾草
-   （#7faf7b 对白底仅 2.4:1，小尺寸描边会发灰）。 */
+/* 描边气泡：无实心底色。内容是外部 SVG（/images/brand-mark.svg），
+   currentColor 对 <img> 不生效，描边色由资产内联（--primary-container，见批次计划 3.3）。
+   纯装饰（alt="" aria-hidden），品牌名由相邻 .brand-name 文本承载，
+   故 2.4:1 不构成 WCAG 非文本对比度问题。
+   尺寸必须显式写死：无 width/height 属性的 SVG 会按 300×150 默认尺寸参与布局，
+   撑宽侧栏并触发 360px 下的水平溢出断言。 */
 .brand-mark {
   width: 32px;
   height: 32px;
-  color: var(--primary);
   display: grid;
   place-items: center;
   flex: none;
+}
+
+.brand-mark img {
+  width: 32px;
+  height: 32px;
 }
 
 .brand-text {
@@ -235,7 +243,11 @@ a:hover {
   }
 }
 
-.nav-link .nav-label {
+/* 导轨宽度（768–1023px）下只留图标。侧栏主 CTA 不是 .nav-link，需一并收进来，
+   否则「开始新对话」会撑破 64px 导轨。两处元素都另带 aria-label，
+   标签隐藏后可访问名不丢。 */
+.nav-link .nav-label,
+.sidebar-cta .nav-label {
   display: none;
 }
 
@@ -244,7 +256,8 @@ a:hover {
     justify-content: flex-start;
   }
 
-  .nav-link .nav-label {
+  .nav-link .nav-label,
+  .sidebar-cta .nav-label {
     display: inline;
   }
 }
@@ -284,6 +297,22 @@ a:hover {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* 顶栏右侧装饰区。内含元素是 aria-hidden 的纯装饰 <span>，不可聚焦、无 onClick，
+   因此不给 hover/cursor 之类的可点击暗示（避免承诺不存在的功能）。 */
+.topbar-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: none;
+  color: var(--muted);
+}
+
+.topbar-glyph {
+  display: grid;
+  place-items: center;
 }
 
 @media (max-width: 767px) {
@@ -679,7 +708,10 @@ a:hover {
   gap: 10px;
 }
 
-.skill-track {
+/* .meter-track / .meter-fill 与技能条同一套几何，不另造一份：
+   fill 宽度直接取 0–100 分值当百分比。 */
+.skill-track,
+.meter-track {
   height: 10px;
   border-radius: 999px;
   background: var(--bg);
@@ -687,7 +719,8 @@ a:hover {
   overflow: hidden;
 }
 
-.skill-fill {
+.skill-fill,
+.meter-fill {
   height: 100%;
   background: var(--primary);
   border-radius: 999px;
@@ -1005,10 +1038,26 @@ a:hover {
   color: var(--primary);
 }
 
+.footer-links {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
 /* ---------- 侧栏底部与主 CTA ---------- */
 
 .sidebar-cta {
   margin: 16px 12px 8px;
+}
+
+/* 导轨宽度（768–1023px）下侧栏只有 64px，.btn 的 16px 左右内边距会让图标撑出
+   侧栏。此区间标签本就隐藏（见 .nav-label 规则），收窄内边距即可容纳纯图标。 */
+@media (max-width: 1023px) {
+  .sidebar-cta .btn {
+    padding-left: 4px;
+    padding-right: 4px;
+  }
 }
 
 .sidebar-footer {
@@ -1354,4 +1403,340 @@ a:hover {
 .switch input:focus-visible + span {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
+}
+
+/* ---------- 入口分节（设计稿 _2 的 1/3 文案 + 2/3 插画，交替左右） ---------- */
+
+.entry-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-bottom: 48px;
+  border-bottom: 1px solid var(--line);
+  transition: border-color var(--transition-base);
+}
+
+.entry-section:hover {
+  border-bottom-color: var(--primary-container);
+}
+
+.entry-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 插画位：设计稿定高 300px。移动端压到 200px，避免小屏首屏被图占满 */
+.entry-art {
+  position: relative;
+  height: 200px;
+  background: var(--surface-container-low);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.entry-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (min-width: 768px) {
+  .entry-section {
+    flex-direction: row;
+    align-items: stretch;
+    gap: var(--gutter);
+  }
+
+  /* 交替左右：偶数项把插画放到左侧 */
+  .entry-alt {
+    flex-direction: row-reverse;
+  }
+
+  .entry-body {
+    width: 33.333%;
+    justify-content: space-between;
+  }
+
+  .entry-art {
+    width: 66.667%;
+    height: 300px;
+  }
+}
+
+.category-pill {
+  align-self: flex-start;
+  background: var(--surface-container-high);
+  color: var(--muted);
+  font-family: var(--font-label);
+  font-size: var(--text-label-md);
+  letter-spacing: var(--tracking-label-md);
+  border-radius: var(--radius-md);
+  padding: 4px 12px;
+}
+
+.entry-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--primary);
+  font-family: var(--font-label);
+  font-size: var(--text-label-md);
+  font-weight: 600;
+}
+
+.entry-link svg {
+  flex: none;
+}
+
+/* 插画上的抽象 UI 提示（进度条 / 分类 chip），纯装饰 */
+.art-overlay {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  box-shadow: var(--shadow-2);
+}
+
+.art-bar {
+  height: 8px;
+  width: 128px;
+  border-radius: 999px;
+  background: var(--surface-container-high);
+  overflow: hidden;
+}
+
+.art-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--primary-container);
+}
+
+/* ---------- 披露（高级设置等） ---------- */
+
+.disclosure {
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.disclosure-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 12px 0;
+  font-size: var(--text-label-md);
+  font-weight: 600;
+  color: var(--ink);
+  text-align: left;
+}
+
+.disclosure-toggle svg {
+  flex: none;
+  color: var(--muted);
+  transition: transform var(--transition-fast);
+}
+
+.disclosure-toggle[aria-expanded='true'] svg {
+  transform: rotate(180deg);
+}
+
+.disclosure-panel {
+  padding-bottom: 16px;
+}
+
+/* ---------- 提示卡 ---------- */
+
+.tip-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--surface-container-low);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  font-size: var(--text-label-md);
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.tip-card svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--primary);
+}
+
+/* ---------- 指标卡网格（5 维评分共用） ---------- */
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.metric-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  padding: 16px;
+}
+
+.metric-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-label);
+  font-size: var(--text-label-md);
+  letter-spacing: var(--tracking-label-md);
+  color: var(--muted);
+}
+
+.metric-glyph {
+  display: inline-grid;
+  place-items: center;
+  color: var(--primary);
+  flex: none;
+}
+
+.metric-value {
+  font-family: var(--font-display);
+  font-size: var(--text-headline-lg);
+  line-height: var(--leading-headline-lg);
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.metric-suffix {
+  font-family: var(--font-sans);
+  font-size: var(--text-label-md);
+  font-weight: 500;
+  color: var(--muted);
+  margin-left: 2px;
+}
+
+/* ---------- 计量行 ---------- */
+
+.meter-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  align-items: baseline;
+  padding: 10px 0;
+}
+
+.meter-row .meter-track {
+  grid-column: 1 / -1;
+}
+
+.meter-fill--tertiary {
+  background: var(--tertiary);
+}
+
+.meter-fill--warning {
+  background: var(--warning);
+}
+
+/* ---------- 目标清单勾选态 ---------- */
+
+.goal-check {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  display: grid;
+  place-items: center;
+  flex: none;
+  margin-top: 2px;
+}
+
+.goal-item--done .goal-check {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+/* 覆盖 .goal-item svg 的 --primary 描边色：实心底上需要白色勾 */
+.goal-item--done .goal-check svg {
+  color: #fff;
+  margin-top: 0;
+}
+
+.goal-item--done {
+  color: var(--muted);
+}
+
+/* ---------- 带图标的小号大写标签行 ---------- */
+
+.eyebrow-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.eyebrow-row svg {
+  flex: none;
+  color: var(--muted);
+}
+
+/* ---------- 胶囊按钮修饰（.btn 基线圆角不动） ---------- */
+
+.btn-pill {
+  border-radius: var(--radius-pill);
+}
+
+/* ---------- 动效修饰 ---------- */
+
+/* 全部包在 no-preference 内；.reduce-motion 钩子另在文件末尾把
+   动画/过渡时长压到 0.01ms，两条路径都能关掉动效。 */
+@media (prefers-reduced-motion: no-preference) {
+  .hover-lift {
+    transition: transform var(--transition-base), opacity var(--transition-base);
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    opacity: 0.9;
+  }
+
+  .press-scale {
+    transition: transform var(--transition-fast);
+  }
+
+  .press-scale:active {
+    transform: scale(0.98);
+  }
+
+  .entry-link {
+    transition: transform var(--transition-base), color var(--transition-base);
+  }
+
+  .entry-section:hover .entry-link {
+    transform: translateX(8px);
+  }
+
+  .entry-art img {
+    transition: transform 700ms ease-out;
+  }
+
+  .entry-section:hover .entry-art img {
+    transform: scale(1.05);
+  }
+}
+
+/* .reduce-motion 只压时长，不压 transform 终态：位移类修饰在此模式下
+   仍需回到原位，否则悬停会留下静态偏移。 */
+.reduce-motion .entry-section:hover .entry-link,
+.reduce-motion .entry-section:hover .entry-art img,
+.reduce-motion .hover-lift:hover,
+.reduce-motion .press-scale:active {
+  transform: none;
 }

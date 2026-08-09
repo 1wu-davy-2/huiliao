@@ -1,6 +1,14 @@
 import { useState } from 'react'
-import { AlertTriangle, ArrowRight, CheckCircle2, EyeOff, FlaskConical, ShieldAlert } from 'lucide-react'
-import LabTabs from './LabTabs'
+import { Link } from 'react-router-dom'
+import {
+  AlertTriangle,
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  EyeOff,
+  FlaskConical,
+  ShieldAlert,
+} from 'lucide-react'
 import { analyzeMessage } from '@/lib/analysis/analyze'
 import { SkillBars } from '@/components/ui/SkillBars'
 import {
@@ -38,6 +46,12 @@ const SAMPLES: Sample[] = [
     text: '明白了，我尊重你的决定。我不会再联系你，祝你以后顺利。',
   },
 ]
+
+// 顶部返回链接。原先是 LabTabs 两页签，/lab 改为入口页后语义不再成立，
+// 改为单向面包屑：本页是 /lab 的下一级。
+const breadcrumbStyle: React.CSSProperties = {
+  marginBottom: 24,
+}
 
 // Stitch _2 的编辑式节奏：小号大写 eyebrow + 大标题 + 长呼吸段
 const sectionShellStyle: React.CSSProperties = {
@@ -106,7 +120,12 @@ export default function MessageLabPage() {
 
   return (
     <>
-      <LabTabs />
+      <nav aria-label="面包屑" style={breadcrumbStyle}>
+        <Link to="/lab" className="entry-link">
+          <ArrowLeft size={16} aria-hidden="true" />
+          返回训练中心
+        </Link>
+      </nav>
       <header className="page-head" style={{ maxWidth: '52rem' }}>
         <span className="eyebrow">诊断工具</span>
         <h1 className="page-title mt-16">消息实验室</h1>

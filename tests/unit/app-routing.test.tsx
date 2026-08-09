@@ -171,15 +171,15 @@ describe('路由与首次设置门禁', () => {
     removeSpy.mockRestore()
   })
 
-  it('五个一级导航入口均可到达', async () => {
+  it('四个一级导航入口均可到达', async () => {
     const user = userEvent.setup()
     renderAt('/', true)
     const nav = screen.getByRole('navigation', { name: '主导航' })
-    await user.click(within(nav).getByRole('link', { name: '练习' }))
-    expect(screen.getByRole('heading', { name: '情境库' })).toBeInTheDocument()
-    await user.click(within(nav).getByRole('link', { name: '实验室' }))
-    expect(screen.getByRole('heading', { name: '消息实验室' })).toBeInTheDocument()
-    await user.click(within(nav).getByRole('link', { name: '进度' }))
+    expect(within(nav).getAllByRole('link')).toHaveLength(4)
+
+    await user.click(within(nav).getByRole('link', { name: '训练中心' }))
+    expect(screen.getByRole('heading', { name: '训练中心' })).toBeInTheDocument()
+    await user.click(within(nav).getByRole('link', { name: '进度统计' }))
     expect(screen.getByRole('heading', { name: '进度与复盘' })).toBeInTheDocument()
     await user.click(within(nav).getByRole('link', { name: '设置' }))
     expect(screen.getByRole('heading', { name: '设置与隐私' })).toBeInTheDocument()
@@ -187,4 +187,42 @@ describe('路由与首次设置门禁', () => {
     expect(screen.getByRole('heading', { name: /今天练哪一场/ })).toBeInTheDocument()
   })
 
+  it('底部导航与侧栏导航同为 4 项', () => {
+    renderAt('/', true)
+    const bottomNav = screen.getByRole('navigation', { name: '主导航（移动端）' })
+    expect(within(bottomNav).getAllByRole('link')).toHaveLength(4)
+  })
+
+  it('训练中心对情境练习与两个实验室子路由均高亮', () => {
+    for (const path of ['/practice', '/practice/s02', '/lab', '/lab/message', '/lab/ai']) {
+      const view = renderAt(path, true)
+      const nav = screen.getByRole('navigation', { name: '主导航' })
+      expect(within(nav).getByRole('link', { name: '训练中心' })).toHaveAttribute(
+        'aria-current',
+        'page',
+      )
+      view.unmount()
+    }
+  })
+
+  it('消息诊断移到 /lab/message 后仍可直接打开', () => {
+    renderAt('/lab/message', true)
+    expect(screen.getByRole('heading', { name: '消息实验室' })).toBeInTheDocument()
+  })
+
+  it('法务与安全页可直接打开', () => {
+    const terms = renderAt('/terms', true)
+    expect(screen.getByRole('heading', { name: '使用条款' })).toBeInTheDocument()
+    terms.unmount()
+    renderAt('/safety', true)
+    expect(screen.getByRole('heading', { name: '安全提示' })).toBeInTheDocument()
+  })
+
+  it('复盘路由在无对应记录时走空状态，且不产生 console 错误', () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    renderAt('/lab/ai/review/does-not-exist', true)
+    expect(screen.getByRole('heading', { name: '本次训练总结' })).toBeInTheDocument()
+    expect(errorSpy).not.toHaveBeenCalled()
+    errorSpy.mockRestore()
+  })
 })

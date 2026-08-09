@@ -4,3 +4,7 @@ test-results/
 playwright-report/
 blob-report/
 *.local
+
+# 设计稿不参与部署（同 .gitignore 说明）
+public/stitch_/
+docs/
