@@ -9,7 +9,7 @@ npm ci                  # Install dependencies (Node 22.x required)
 npm run dev             # Vite dev server → http://localhost:5173
 npm run build           # tsc -b && vite build → dist/
 npm run preview         # Preview production build locally
-npm test                # All Vitest unit tests (600 tests / 29 files, 2026-08-10 实测)
+npm test                # All Vitest unit tests (604 tests / 29 files, 2026-08-10 实测)
 npm run test:watch      # Vitest watch mode
 npm run lint            # ESLint (TypeScript + React hooks)
 npm run typecheck:api   # tsc against api/ only (separate project, not in tsc -b)
@@ -78,13 +78,15 @@ Path aliases `@/` → `src/` and `@tests/` → `tests/` are declared in both `ts
    - `trialDb.ts` — IndexedDB (`huiliao-ai-trials` / `sessions`) for full transcripts, with eviction at 20 sessions / 25 MB total / 2 MB per record
    - `trialClient.ts` — `fetch` wrappers for `/api/ai/turn` and `/api/ai/evaluate`
 
-9. **`src/lib/settings/AppDataContext.tsx`** — context over all app state (settings, progress, favorites, reflections, trial summaries), exposing `useAppData()`. Also owns `reducedMotion` class toggling and corrupt-storage recovery state.
+9. **`src/lib/settings/AppDataContext.tsx`** — context over all app state (settings, progress, favorites, reflections, trial summaries, `aiConfig`), exposing `useAppData()`. Also owns `reducedMotion` class toggling and corrupt-storage recovery state. Every mutation funnels through `runMutation`, which converts a `StorageRecoveryRequiredError` into recovery state and returns `false` rather than throwing — so callers must check the boolean instead of assuming the write landed.
 
-10. **`src/components/`** / **`src/features/`** — shared UI (`AppLayout`, `Modal`, `ConsentSignals`, `SkillBars`, `SkillRadar`) and page components. `features/lab/` holds `LabHubPage` (entry), `MessageLabPage`, `AiTrialPage`, and `TrialReviewPage`; `LabTabs` is now used only by `AiTrialPage`. `features/legal/` holds `TermsPage` and `SafetyPage`. `src/lib/skills/skills.ts` is a small skill-scoring module tested in `tests/unit/skills.test.ts`.
+10. **`src/components/`** / **`src/features/`** — shared UI (`AppLayout`, `Modal`, `ConsentSignals`, `SkillBars`, `SkillRadar`) and page components. `features/lab/` holds `LabHubPage` (entry), `MessageLabPage`, `AiTrialPage`, `TrialReviewPage`, and `AiConfigModal` (mounted from `AppLayout`, not from the lab routes); `LabTabs` is now used only by `AiTrialPage`. `features/legal/` holds `TermsPage` and `SafetyPage`. `src/lib/skills/skills.ts` is a small skill-scoring module tested in `tests/unit/skills.test.ts`.
 
 ### Storage versioning (note the mismatch)
 
-`SCHEMA_VERSION` is **2**, but `STORAGE_NAMESPACE` is still the literal `'huiliao:v1'`. The key is not versioned; the payload is. Reading dispatches on the `schemaVersion` field inside the JSON, so v1→v2 migration (which backfills `trialSummaries: []`) happens in place under the same key. Don't "fix" the namespace string to `v1`→`v2` — that silently orphans every existing user's data.
+`SCHEMA_VERSION` is **3**, but `STORAGE_NAMESPACE` is still the literal `'huiliao:v1'`. The key is not versioned; the payload is. Reading dispatches on the `schemaVersion` field inside the JSON, so v1→v2 (backfills `trialSummaries: []`) and v2→v3 (backfills `aiConfig: undefined`) both migrate in place under the same key. Don't "fix" the namespace string to match the version — that silently orphans every existing user's data.
+
+Each migration is a separate `if (rawVersion === N)` branch in `loadStoredDataWithStatus`, and each spreads `DEFAULT_SETTINGS` under the stored settings so a field added to `UserSettings` can't come back `undefined`. Anything newer than `SCHEMA_VERSION` falls through to `unsupported-version` recovery rather than being downgraded.
 
 Trial history is deliberately split across two stores: full transcripts in IndexedDB, lightweight summaries in localStorage. They can drift (IndexedDB cleared independently, or a session evicted by quota), so storage exposes a reconciliation path that filters summaries down to IDs still present in the DB. Keep both sides in mind when touching either.
 
@@ -94,7 +96,7 @@ Browser (`trialClient`) → `POST /api/ai/turn` with the key in the `X-Huiliao-A
 
 Invariants to preserve when editing anything under `api/` or `src/lib/ai/`:
 
-- **The key is never persisted.** It lives in React state (plus a ref for async reads) and travels in a header. Never write it to localStorage, IndexedDB, a query string, a log, or a trial record.
+- **The key is persisted only in `aiConfig`, and only there.** This changed deliberately — see "AI config persistence" below. It travels to the function in the `X-Huiliao-Api-Key` header and must still never reach a query string, a log, a trial record (`TrialSessionRecord`/`TrialSummary` carry `upstreamHost` and `model`, never the key), or IndexedDB.
 - **The system prompt is built server-side** (`buildSystemPrompt`) and is not client-supplied.
 - **`api/_lib/urlPolicy.ts` is SSRF defense** for user-supplied custom base URLs, in three ordered stages: `validateBaseUrlSyntax` (HTTPS only, ≤2048 chars, no credentials/query/fragment, no whitespace or control chars, no single-label hosts, no IPv6 zone id, no trailing dot, no traversal or encoded-separator paths, and `localhost` / `*.local` / `*.internal` / `*.home.arpa` rejected by name) → `classifyAddress` → `resolveAndPin`. Widening any stage needs a security rationale.
 - **It is an allowlist, not a blocklist.** `classifyAddress` accepts only `ipaddr.js` range `unicast`, normalizing IPv4-mapped IPv6 (`::ffff:127.0.0.1`) first so loopback can't be laundered past the check. Loopback, RFC 1918, link-local (including the cloud metadata IP), CGNAT, multicast, reserved, ULA, Teredo, 6to4, and NAT64 all fall out of that single rule rather than being enumerated.
@@ -107,6 +109,24 @@ Invariants to preserve when editing anything under `api/` or `src/lib/ai/`:
 Tests live in `tests/unit/api-url-policy.test.ts` (alongside `api-upstream`, `api-providers`, `api-handlers`). `ResolveDeps.lookup` is injected so the DNS stage is testable without touching the network. When changing any part of the policy, add or update tests for the affected path — pinning and whole-host-rejection are the most critical.
 
 The reviewed trial pool (`AI_TRIALS_REVIEWED`) is currently **empty**: all 18 candidate challenges sit in `ai-trials-draft.ts` awaiting professional review, so the UI shows an empty-pool state. That is intended, not a bug to route around. In dev mode (`import.meta.env.DEV`), `getPublishedTrials()` injects a `_DEV_DEMO` challenge when the pool is empty, so the AI trial UI is fully exercisable locally. The demo object lives in `src/content/ai-trials.ts` and is dead-code-eliminated from production bundles by Vite/Rollup.
+
+`_DEV_DEMO` is `communication` / `simple` to match `AiTrialPage`'s default mode and difficulty. It was `promptcraft` / `normal`, which made "随机换一题" a silent no-op: `selectChallenge` filters the pool by mode **and** difficulty, so the one injected challenge was always filtered out and the click set `undefined` with no error surfaced. If you change either field, change `AiTrialPage`'s defaults too, or the dev pool goes dark again. `tests/unit/ai-trials.test.ts` asserts the empty case via a deliberately non-matching `promptcraft`/`normal` request, so that test is the tripwire.
+
+### AI config persistence (a deliberate reversal)
+
+`AiConfig` (`protocol`, `model`, `apiKey`, `targetKind`, `presetId`, `customUrl`) is stored in localStorage under `StoredData.aiConfig`, written through `updateAiConfig()` → `saveAiConfig()` on the context. This **reverses** the original "the key never touches storage" rule at the user's explicit request, so treat it as a product decision rather than drift, and don't silently revert it.
+
+What that costs, and what still has to hold:
+
+- Any XSS becomes key exfiltration — there is no in-memory tier left to protect. `script-src 'self'` is now load-bearing security, not just hygiene.
+- `exportStoredData()` serializes all of `StoredData`, so **exports contain the plaintext key** (verified, and pinned by a test in `storage.test.ts` labelled as a known gap). Neither the export path nor `/privacy` redacts or warns. This is the largest open item in the feature.
+- **`aiConfigSchema` validates `customUrl` conditionally, via `.refine`, not `.min(1)` on the field.** Under `targetKind: 'preset'` the URL is legitimately `''`; a field-level `.min(1)` makes saving the *default* configuration throw `ZodError`. That shipped in `0d88a9c` and broke the most common save path — `runMutation` only converts `StorageRecoveryRequiredError`, so a `ZodError` re-throws out of the click handler and the write is silently lost. `AiConfigModal` also guards the custom-with-empty-URL case before calling. Regression tests live in `storage.test.ts` → `describe('updateAiConfig')`.
+- The key is stored unencrypted. A WebCrypto wrapper was considered and deferred.
+- `AiConfigModal` states the persistence in its own copy; keep that disclosure in place, because it is the only place the user is told.
+
+The entry point is a real `<button>` in the `AppLayout` topbar (`Cpu` icon, gains `.configured` when `data.aiConfig?.apiKey` is set). That region was previously `aria-hidden` decorative glyphs — the modal is mounted from `AppLayout`, so it is reachable from every gated route, not just `/lab/ai`.
+
+`AiTrialPage` **must** keep its `useEffect` that copies `savedConfig` into local state. Its fields are `useState` initialized from `data.aiConfig`, which only runs on mount; without that effect, saving from the modal leaves the already-mounted trial page showing stale empty inputs. Relatedly, switching protocol/target now clears only the consent checkbox — clearing the key there would wipe a value the user just persisted.
 
 ### Routing & auth gate
 
@@ -133,7 +153,11 @@ Both are dev-only by construction — do not let either leak into a production p
 
 Three `api/_lib/` helpers not covered above: `http.ts` provides `originAllowed()` (referenced by the devApiPlugin's Origin backfill), `contracts.ts` holds shared Zod schemas for request/response validation, and `errors.ts` maps upstream failures to the fixed `ApiErrorCode` set.
 
-**Custom `baseUrl` must carry its full path prefix** (`https://host/v1`, `.../v1beta`). `joinPath` only appends the adapter path (`/messages`, `/chat/completions`); it never guesses a version segment, since Gemini uses `/v1beta` and self-hosted proxies may sit at the root. Tools like cc-switch auto-append `/v1`, so their configs cannot be pasted in verbatim. A missing prefix typically surfaces as `UPSTREAM_BAD_RESPONSE`: many gateways answer `POST /messages` with their own HTML homepage at **HTTP 200**, which clears every status check and only fails at `parseJsonOnce`.
+**The server never guesses a path prefix; the client fills it in.** `joinPath` only appends the adapter path (`/messages`, `/chat/completions`) to whatever prefix arrives, since Gemini uses `/v1beta` and self-hosted proxies may sit at the root. So a `baseUrl` that reaches `api/` without its prefix stays broken.
+
+Client-side, `normalizeBaseUrl(raw, protocol)` closes that gap: when the user's URL has an empty or `/` pathname it appends `/v1` (`/v1beta` for Gemini), and it leaves any non-root path untouched so `/v2` or a nested proxy mount survives. It is defined **twice** — in `AiConfigModal.tsx` (applied on save) and in `AiTrialPage.tsx` (applied to every outbound `target`) — because the trial page's fields are editable after load and must normalize whatever the user typed there, not just what was saved. Change one, change the other.
+
+A missing prefix still surfaces as `UPSTREAM_BAD_RESPONSE` rather than a 404: many gateways answer `POST /messages` with their own HTML homepage at **HTTP 200**, which clears every status check and only fails at `parseJsonOnce`.
 
 ### CSS system
 
@@ -182,5 +206,7 @@ Commits follow `type: concise summary`. Common prefixes: `feat:`, `fix:`, `docs:
 ## Privacy constraints
 
 This app is local-first by design. Do not add telemetry, analytics, error reporting, or any persistence of free-text drafts without an explicit privacy review. The AI trial is the sole network egress, it is user-initiated with a user-supplied key, and it must stay that way. Changes to content or safety rules must preserve Zod validation and add boundary-focused regression tests.
+
+The one carve-out is `aiConfig` — the API key is now persisted at the user's request (see "AI config persistence"). Everything else that guarantee covered still holds: drafts, free-text input, and reflections stay unpersisted, and no transcript leaves the device except through the user-initiated trial call. `README.md` and the in-app `/privacy` page still claim the key is never written to storage; both are now inaccurate and need updating before release.
 
 Test setup (`tests/setup.ts`) wires `fake-indexeddb/auto`, stubs `URL.createObjectURL`, and clears `localStorage` after each test — trial persistence is testable without a browser.

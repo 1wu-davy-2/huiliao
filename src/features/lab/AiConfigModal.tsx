@@ -78,6 +78,11 @@ export default function AiConfigModal({ onClose }: Props) {
 
   const handleSave = useCallback(() => {
     if (!apiKey || !model) return
+    // 自定义目标必须有地址：schema 会拒绝空串，提前拦住以免抛错穿出事件处理器
+    if (targetKind === 'custom' && !customUrl.trim()) {
+      setConnStatus('请填写 Base URL，或切换回官方预设')
+      return
+    }
 
     const config: AiConfig = {
       protocol,

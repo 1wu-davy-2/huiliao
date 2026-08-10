@@ -158,14 +158,25 @@ export const privacyTopicSchema = z.object({
   reviewStatus: contentReviewStatusSchema,
 })
 
-export const aiConfigSchema = z.object({
-  protocol: apiProtocolSchema,
-  model: z.string().min(1),
-  apiKey: z.string().min(1),
-  targetKind: z.enum(['preset', 'custom']),
-  presetId: z.string().min(1),
-  customUrl: z.string().min(1),
-})
+/**
+ * AI 连接配置。
+ *
+ * customUrl 只在 targetKind 为 custom 时必填：预设目标下它合法地为空串，
+ * 若在字段级写 .min(1)，保存预设配置会直接抛 ZodError（默认路径即失败）。
+ */
+export const aiConfigSchema = z
+  .object({
+    protocol: apiProtocolSchema,
+    model: z.string().min(1),
+    apiKey: z.string().min(1),
+    targetKind: z.enum(['preset', 'custom']),
+    presetId: z.string().min(1),
+    customUrl: z.string(),
+  })
+  .refine((c) => c.targetKind !== 'custom' || c.customUrl.length > 0, {
+    message: '自定义地址不能为空',
+    path: ['customUrl'],
+  })
 
 export const storedDataSchema = z.object({
   schemaVersion: z.number().int().positive(),

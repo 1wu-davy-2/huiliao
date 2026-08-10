@@ -10,9 +10,10 @@ import {
   loadStoredDataWithStatus,
   removeReflection,
   toggleFavorite,
+  updateAiConfig,
   updateSettings,
 } from '@/lib/storage/storage'
-import type { ProgressRecord, Reflection, StoredData } from '@/types'
+import type { AiConfig, ProgressRecord, Reflection, StoredData } from '@/types'
 
 const SAMPLE_RECORD: ProgressRecord = {
   scenarioId: 's02',
@@ -203,5 +204,53 @@ describe('storage', () => {
     const raw = window.localStorage.getItem(STORAGE_NAMESPACE)!
     expect(raw).not.toContain('草稿')
     expect(raw).not.toContain('你想诊断的消息')
+  })
+})
+
+describe('updateAiConfig', () => {
+  const PRESET_CONFIG: AiConfig = {
+    protocol: 'openai-compatible',
+    model: 'gpt-4o-mini',
+    apiKey: 'sk-test-preset',
+    targetKind: 'preset',
+    presetId: 'openai',
+    // 预设目标下 customUrl 合法地为空串
+    customUrl: '',
+  }
+
+  beforeEach(() => {
+    seedStoredData(freshData())
+  })
+
+  // 回归：字段级 customUrl.min(1) 会让预设（默认）路径保存直接抛 ZodError，
+  // 即最常用的一条路径完全无法保存。
+  it('预设目标允许空 customUrl，不抛错', () => {
+    expect(() => updateAiConfig(PRESET_CONFIG)).not.toThrow()
+    const { data } = loadStoredDataWithStatus()
+    expect(data.aiConfig?.apiKey).toBe('sk-test-preset')
+    expect(data.aiConfig?.customUrl).toBe('')
+  })
+
+  it('自定义目标拒绝空 customUrl', () => {
+    expect(() =>
+      updateAiConfig({ ...PRESET_CONFIG, targetKind: 'custom', customUrl: '' }),
+    ).toThrow()
+  })
+
+  it('自定义目标接受非空 customUrl', () => {
+    expect(() =>
+      updateAiConfig({
+        ...PRESET_CONFIG,
+        targetKind: 'custom',
+        customUrl: 'https://proxy.example.com/v1',
+      }),
+    ).not.toThrow()
+  })
+
+  // 已知缺口，非期望行为：导出含明文 apiKey。
+  // 此断言锁定现状，若将来加入脱敏，应连同 README / privacy 文案一起改。
+  it('导出目前包含明文 apiKey（已知隐私缺口）', () => {
+    updateAiConfig(PRESET_CONFIG)
+    expect(exportStoredData()).toContain('sk-test-preset')
   })
 })
