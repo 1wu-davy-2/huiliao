@@ -133,6 +133,15 @@
   margin: 0 auto;
   padding: 0 var(--gutter) var(--section-gap);
 }
+.lp-mock-caption {
+  text-align: center;
+  font-family: var(--font-label);
+  font-size: var(--text-label-sm, 11px);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--outline);
+  margin-bottom: 12px;
+}
 .lp-preview {
   width: 100%;
   aspect-ratio: 16 / 9;

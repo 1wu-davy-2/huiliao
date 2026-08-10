@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { MessageCircle, ShieldCheck, Users } from 'lucide-react'
+import { HeartHandshake, ShieldCheck, MessageCircleOff } from 'lucide-react'
 import { useAppData } from '@/lib/settings/AppDataContext'
 import './landing.css'
 
@@ -41,18 +41,19 @@ export default function LandingPage() {
             把话说清楚，<br className="lp-br-mobile" />是成年人最顶级的修养
           </h1>
           <p className="lp-sub">
-            一个帮助成年人练习清晰表达、尊重沟通与处理冲突的训练平台。<br />
-            在安全的环境中，重塑你的沟通模式。
+            面向缺少约会沟通经验的成年人，练习尊重、真诚、有边界的关系沟通。<br />
+            不教「拿下」的话术，不承诺任何恋爱结果。
           </p>
           <div className="lp-hero-actions">
             <Link to="/onboarding" className="lp-btn lp-btn-soft lp-btn-lg">立即开始训练</Link>
             <a href="#philosophy" className="lp-btn lp-btn-outline lp-btn-lg">了解更多</a>
           </div>
-          <p className="lp-local-note">本地优先 · 无账号 · 无云同步</p>
+          <p className="lp-local-note">本地优先 · 无账号 · 无云同步 · 仅限 18 岁以上</p>
         </section>
 
         {/* 产品界面 HTML Mockup */}
         <section className="lp-preview-section" aria-label="产品界面预览">
+          <p className="lp-mock-caption" aria-hidden="true">以下为界面示意，数据为示例</p>
           <div className="lp-mockup" aria-hidden="true">
             {/* 侧边栏 */}
             <aside className="lp-mock-sidebar">
@@ -132,28 +133,28 @@ export default function LandingPage() {
           <h2 id="features-heading" className="lp-section-heading">三个核心训练方向</h2>
           <div className="lp-pillars">
             <div className="lp-pillar">
-              <div className="lp-pillar-icon" aria-hidden="true"><MessageCircle size={22} /></div>
-              <h3 className="lp-pillar-title">清晰表达</h3>
-              <p className="lp-pillar-desc">摆脱词不达意，精准传递核心诉求。学习如何剥离情绪，用结构化的语言表达真实的需要，让沟通不再内耗。</p>
+              <div className="lp-pillar-icon" aria-hidden="true"><HeartHandshake size={22} /></div>
+              <h3 className="lp-pillar-title">自然开口</h3>
+              <p className="lp-pillar-desc">从搭话到续聊，不靠套路。练习在真实语境中自然开口，表达真实的兴趣，而不是背台词。</p>
             </div>
             <div className="lp-pillar">
               <div className="lp-pillar-icon" aria-hidden="true"><ShieldCheck size={22} /></div>
-              <h3 className="lp-pillar-title">边界意识</h3>
-              <p className="lp-pillar-desc">建立健康的人际边界，学会温和而坚定地拒绝。在尊重他人的同时，守护自己的心理空间，实现平等的对话。</p>
+              <h3 className="lp-pillar-title">同意与边界</h3>
+              <p className="lp-pillar-desc">迟疑、拒绝、撤回都要接住。学会在关系里识别对方的信号，在任何阶段停止推进都是正确的选择。</p>
             </div>
             <div className="lp-pillar">
-              <div className="lp-pillar-icon" aria-hidden="true"><Users size={22} /></div>
-              <h3 className="lp-pillar-title">冲突处理</h3>
-              <p className="lp-pillar-desc">直面分歧，不再逃避。掌握将冲突转化为加深理解的契机，通过非暴力沟通技巧，在对立中寻找共识。</p>
+              <div className="lp-pillar-icon" aria-hidden="true"><MessageCircleOff size={22} /></div>
+              <h3 className="lp-pillar-title">体面收尾</h3>
+              <p className="lp-pillar-desc">被拒绝后如何停止推进，说清楚而不纠缠。拒绝不需要破解，收到就接受，这本身就是一种成熟。</p>
             </div>
           </div>
         </section>
 
         {/* 产品理念 */}
         <section className="lp-philosophy" id="philosophy" aria-labelledby="philosophy-heading">
-          <h2 id="philosophy-heading" className="lp-philosophy-title">专注于人的成长，而非机器的效率</h2>
+          <h2 id="philosophy-heading" className="lp-philosophy-title">练的是你能控制的，不是对方的反应</h2>
           <p className="lp-philosophy-body">
-            我们坚信，沟通是一门需要终身练习的手艺。会聊不是一个为你代写回复的 AI 工具，更不是追求捷径的效率插件。它是一个安静的、私人的心理实践室。在这里，你通过反复的模拟与反思，构建属于自己的成熟人格。
+            会聊不教你怎么「拿下」，也不承诺提升回复率或脱单率。它是一个安静的私人练习室：你在分支情境里开口，看对方如何回应，理解一句表达为什么合适——而不是只得到一句可以照抄的台词。建议只用可随时撤销的最小权限 Key。
           </p>
         </section>
 
@@ -163,8 +164,8 @@ export default function LandingPage() {
             <div className="lp-deco lp-deco-tr" aria-hidden="true" />
             <div className="lp-deco lp-deco-bl" aria-hidden="true" />
             <div className="lp-cta-inner">
-              <h2 className="lp-cta-title">准备好重塑你的沟通模式了吗？</h2>
-              <p className="lp-cta-sub">加入会聊，开启你的第一次专项沟通训练。</p>
+              <h2 className="lp-cta-title">准备好开口了吗？</h2>
+              <p className="lp-cta-sub">加入会聊，开启你的第一次专项沟通训练。本应用仅面向 18 岁以上成年人。</p>
               <Link to="/onboarding" className="lp-btn lp-btn-primary lp-btn-lg">免费体验</Link>
             </div>
           </div>
@@ -173,7 +174,7 @@ export default function LandingPage() {
 
       <footer className="lp-footer">
         <div className="lp-footer-inner">
-          <span className="lp-footer-copy">© 2026 会聊 | 专业沟通心理实践</span>
+          <span className="lp-footer-copy">© 2026 会聊 | 约会与关系沟通练习场</span>
           <nav className="lp-footer-nav" aria-label="页脚导航">
             <Link to="/privacy" className="lp-footer-link">隐私协议</Link>
             <Link to="/terms" className="lp-footer-link">服务条款</Link>
