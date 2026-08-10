@@ -3,6 +3,7 @@ import { render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { AppDataProvider } from '@/lib/settings/AppDataContext'
 import { STORAGE_NAMESPACE } from '@/lib/storage/storage'
+import { getPublishedScenarios } from '@/content'
 import HomePage from '@/features/home/HomePage'
 
 const DAY = 24 * 3600 * 1000
@@ -45,6 +46,31 @@ function seedData() {
           text: '复盘一：提问太多',
         },
       ],
+    }),
+  )
+}
+
+/** 只播种「已完成哪些情境」，用于验证推荐措辞。选择困难固定为 start。 */
+function seedCompleted(scenarioIds: string[]) {
+  window.localStorage.setItem(
+    STORAGE_NAMESPACE,
+    JSON.stringify({
+      schemaVersion: 1,
+      settings: {
+        isAdultConfirmed: true,
+        selectedChallenges: ['start'],
+        onboardingCompleted: true,
+        reducedMotion: false,
+      },
+      progress: scenarioIds.map((id) => ({
+        scenarioId: id,
+        completedAt: new Date(Date.now() - DAY).toISOString(),
+        attempts: 1,
+        scores: { clarity: 70, authenticity: 70, listening: 70, pace: 70, boundaries: 70 },
+        boundaryCheckPassed: true,
+      })),
+      favorites: [],
+      reflections: [],
     }),
   )
 }
@@ -104,6 +130,38 @@ describe('首页', () => {
     // 累计时长按 durationMinutes 累加：s02(5) + s07(6) = 11
     expect(within(aside).getByText('11')).toBeInTheDocument()
     expect(screen.getByText('复盘一：提问太多')).toBeInTheDocument()
+  })
+
+  // 守卫：卡点入口硬编码了场景 ID，内容重构时会静默指向不存在的路由。
+  // 从渲染结果取 href 而非导入常量——断言用户实际拿到的链接。
+  it('卡点入口指向的情境全部存在于已审校情境中', () => {
+    renderHome()
+    const publishedIds = getPublishedScenarios().map((s) => s.id)
+    expect(publishedIds.length).toBeGreaterThan(0)
+    const hrefs = screen.getAllByRole('listitem').map((el) => el.getAttribute('href') ?? '')
+    expect(hrefs.length).toBeGreaterThan(0)
+    for (const href of hrefs) {
+      const id = href.replace('/practice/', '')
+      expect(publishedIds, `卡点入口指向不存在的情境 ${id}（${href}）`).toContain(id)
+    }
+  })
+
+  it('推荐已练过的情境时改用重练措辞，不当作新任务', () => {
+    // start 方向的优先列表是 s02、s03，两者都完成后 recommendScenario 回退到 s02
+    seedCompleted(['s02', 's03'])
+    renderHome()
+    expect(screen.getByRole('heading', { level: 2, name: '再练一次' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: '今日训练任务' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /重新练习/ })).toBeInTheDocument()
+    expect(screen.getByText('已练过')).toBeInTheDocument()
+  })
+
+  it('推荐未练过的情境时保持今日训练任务措辞', () => {
+    seedCompleted(['s02'])
+    renderHome()
+    expect(screen.getByRole('heading', { level: 2, name: '今日训练任务' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: '再练一次' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /继续练习/ })).toBeInTheDocument()
   })
 
   it('无记录时不显示默认分数，复盘区走空状态', () => {

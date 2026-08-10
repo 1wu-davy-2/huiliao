@@ -1,12 +1,13 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight, Clock, FileText, NotebookPen } from 'lucide-react'
 import { useAppData } from '@/lib/settings/AppDataContext'
-import { SCENARIOS, getScenario } from '@/content'
+import { getPublishedScenarios, getScenario } from '@/content'
 import { CHALLENGE_OPTIONS, recommendScenario } from '@/lib/skills/skills'
 import { aggregateSkillScores } from '@/lib/skills/skills'
 import { SkillRadar } from '@/components/ui/SkillRadar'
 import { SkillBars } from '@/components/ui/SkillBars'
 
+// 硬编码场景 ID：有效性由 home-page.test.tsx 从渲染结果的 href 守卫
 const QUICK_ENTRIES = [
   { label: '不知道怎么开口', target: '/practice/s02', hint: '刚加好友的第一轮聊天' },
   { label: '对方回复变短', target: '/practice/s04', hint: '识别低投入，适时结束' },
@@ -19,13 +20,19 @@ export default function HomePage() {
   const { data } = useAppData()
   const navigate = useNavigate()
   const completedIds = data.progress.map((r) => r.scenarioId)
-  const scenarioIds = SCENARIOS.map((s) => s.id)
+  // 只从已审校情境中推荐：草稿场景在情境库里不可见，推荐它会给出一个点不进去的条目
+  const published = getPublishedScenarios()
+  const scenarioIds = published.map((s) => s.id)
   const recommendedId = recommendScenario(
     data.settings.selectedChallenges,
     completedIds,
     scenarioIds,
   )
   const recommended = recommendedId ? getScenario(recommendedId) : undefined
+  // recommendScenario 在优先列表全部完成后会回退到已练过的场景（刻意行为，
+  // 见 skills.test.ts）。此处据此把措辞从「今日训练任务」调整为重练，
+  // 否则会把做过的情境当成新任务展示。
+  const isReplay = recommendedId !== null && completedIds.includes(recommendedId)
   const skills = aggregateSkillScores(data.progress)
   const challengeLabels = CHALLENGE_OPTIONS.filter((c) =>
     data.settings.selectedChallenges.includes(c.id),
@@ -70,7 +77,7 @@ export default function HomePage() {
         <section className="section" aria-labelledby="today-title">
           <div className="section-head">
             <h2 className="section-title" id="today-title">
-              今日训练任务
+              {isReplay ? '再练一次' : '今日训练任务'}
             </h2>
           </div>
           <div className="task-row" style={{ paddingBottom: 24, borderBottom: '1px solid var(--line)' }}>
@@ -98,7 +105,18 @@ export default function HomePage() {
                   </span>
                   <span className="meta-dot" aria-hidden="true">·</span>
                   <span className="tag">难度：{recommended.difficulty}</span>
+                  {isReplay && (
+                    <>
+                      <span className="meta-dot" aria-hidden="true">·</span>
+                      <span className="tag">已练过</span>
+                    </>
+                  )}
                 </div>
+              )}
+              {isReplay && (
+                <p className="small muted mt-8">
+                  这个方向的情境你都走过一遍了。重练会覆盖上次成绩，也可以直接进情境库换一个。
+                </p>
               )}
               {weekCompleted > 0 && (
                 <p className="small muted mt-8">本周已完成 {weekCompleted} 个情境练习</p>
@@ -109,7 +127,7 @@ export default function HomePage() {
               className="btn btn-primary"
               onClick={() => navigate(recommended ? `/practice/${recommended.id}` : '/practice')}
             >
-              继续练习
+              {isReplay ? '重新练习' : '继续练习'}
               <ArrowRight size={16} aria-hidden="true" />
             </button>
           </div>
