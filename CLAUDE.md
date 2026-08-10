@@ -9,7 +9,7 @@ npm ci                  # Install dependencies (Node 22.x required)
 npm run dev             # Vite dev server → http://localhost:5173
 npm run build           # tsc -b && vite build → dist/
 npm run preview         # Preview production build locally
-npm test                # All Vitest unit tests (597 tests / 29 files, 2026-08-09 实测)
+npm test                # All Vitest unit tests (600 tests / 29 files, 2026-08-10 实测)
 npm run test:watch      # Vitest watch mode
 npm run lint            # ESLint (TypeScript + React hooks)
 npm run typecheck:api   # tsc against api/ only (separate project, not in tsc -b)
@@ -80,7 +80,7 @@ Path aliases `@/` → `src/` and `@tests/` → `tests/` are declared in both `ts
 
 9. **`src/lib/settings/AppDataContext.tsx`** — context over all app state (settings, progress, favorites, reflections, trial summaries), exposing `useAppData()`. Also owns `reducedMotion` class toggling and corrupt-storage recovery state.
 
-10. **`src/components/`** / **`src/features/`** — shared UI (`AppLayout`, `Modal`, `ConsentSignals`, `SkillBars`) and page components. `features/lab/` holds both `MessageLabPage` and `AiTrialPage`, tabbed via `LabTabs`.
+10. **`src/components/`** / **`src/features/`** — shared UI (`AppLayout`, `Modal`, `ConsentSignals`, `SkillBars`, `SkillRadar`) and page components. `features/lab/` holds `LabHubPage` (entry), `MessageLabPage`, `AiTrialPage`, and `TrialReviewPage`; `LabTabs` is now used only by `AiTrialPage`. `features/legal/` holds `TermsPage` and `SafetyPage`. `src/lib/skills/skills.ts` is a small skill-scoring module tested in `tests/unit/skills.test.ts`.
 
 ### Storage versioning (note the mismatch)
 
@@ -104,10 +104,7 @@ Invariants to preserve when editing anything under `api/` or `src/lib/ai/`:
 - **Responses are scanned for key echo** and rejected as `UPSTREAM_SECRET_ECHO`.
 - **CSP pins `connect-src 'self'`.** The browser therefore cannot call a custom provider directly — the function is the only egress. Any design that fetches a model endpoint from the client contradicts the deployed headers.
 
-Two traps in `urlPolicy.ts` itself:
-
-- **It contains literal control bytes, not escapes** — a raw NUL inside the `UNSAFE_PATH` character class and a raw NUL–`0x1f` range in the control-character guard. Git therefore classifies the file as binary (`git diff` shows no hunks) and `grep`/`rg` skip it entirely, so a content search for its own exports silently returns nothing. Any editor or formatter that normalizes input will eat those bytes and weaken both checks with no visible diff. Rewriting them as `\x00` and `\x00-\x1f` escapes is behavior-preserving and removes the hazard.
-- **Tests live in `tests/unit/api-url-policy.test.ts`** (alongside `api-upstream`, `api-providers`, `api-handlers`). `ResolveDeps.lookup` is injected so the DNS stage is testable without touching the network. When changing any part of the policy, add or update tests for the affected path — pinning, whole-host-rejection, and the control-byte guard are the most critical.
+Tests live in `tests/unit/api-url-policy.test.ts` (alongside `api-upstream`, `api-providers`, `api-handlers`). `ResolveDeps.lookup` is injected so the DNS stage is testable without touching the network. When changing any part of the policy, add or update tests for the affected path — pinning and whole-host-rejection are the most critical.
 
 The reviewed trial pool (`AI_TRIALS_REVIEWED`) is currently **empty**: all 18 candidate challenges sit in `ai-trials-draft.ts` awaiting professional review, so the UI shows an empty-pool state. That is intended, not a bug to route around. In dev mode (`import.meta.env.DEV`), `getPublishedTrials()` injects a `_DEV_DEMO` challenge when the pool is empty, so the AI trial UI is fully exercisable locally. The demo object lives in `src/content/ai-trials.ts` and is dead-code-eliminated from production bundles by Vite/Rollup.
 
@@ -117,7 +114,7 @@ In `src/app/App.tsx`. Corrupt storage short-circuits to `StorageRecoveryPage` be
 
 **`/` and `/onboarding` are both ungated.** `/` is the marketing `LandingPage` (`src/features/landing/`), which self-redirects to `/home` once **both** `onboardingCompleted` and `isAdultConfirmed` are true — so returning users never see it. `/onboarding` sets those two flags and then navigates to `/home` (not `/`, which would bounce through the landing redirect). Every other route sits behind `<RequireOnboarding>`, which redirects to `/onboarding` unless both flags are true.
 
-Routes: `/` (landing, ungated), `/onboarding` (ungated), then gated: `/home` (the workbench, formerly `/`), `/practice`, `/practice/:id`, `/lab`, `/lab/ai`, `/progress`, `/settings`, `/privacy`, with `*` → `/`.
+Routes: `/` (landing, ungated), `/onboarding` (ungated), then gated: `/home` (the workbench, formerly `/`), `/practice`, `/practice/:id`, `/lab` (hub page), `/lab/message`, `/lab/ai`, `/lab/ai/review/:sessionId`, `/progress`, `/settings`, `/privacy`, `/terms`, `/safety`, with `*` → `/`.
 
 The `/` → `/home` move is load-bearing for tests: an assertion that "an unonboarded visit redirects to onboarding" must target `/home`, not `/`, or it will render the landing page and fail. `NAV_ITEMS` and `PAGE_CONTEXT` in `AppLayout.tsx` key off `/home` too.
 
@@ -133,6 +130,8 @@ Two things the plugin does that production does not:
 - **`api/_lib/challenges.ts` injects the `_DEV_DEMO` challenge** into its server-side reviewed map when `process.env.NODE_ENV !== 'production'` and the pool is empty. Without it every request dies at the `hasReviewedPool()` publish gate. This mirrors the client-side `getPublishedTrials()` injection; keep the two in sync.
 
 Both are dev-only by construction — do not let either leak into a production path.
+
+Three `api/_lib/` helpers not covered above: `http.ts` provides `originAllowed()` (referenced by the devApiPlugin's Origin backfill), `contracts.ts` holds shared Zod schemas for request/response validation, and `errors.ts` maps upstream failures to the fixed `ApiErrorCode` set.
 
 **Custom `baseUrl` must carry its full path prefix** (`https://host/v1`, `.../v1beta`). `joinPath` only appends the adapter path (`/messages`, `/chat/completions`); it never guesses a version segment, since Gemini uses `/v1beta` and self-hosted proxies may sit at the root. Tools like cc-switch auto-append `/v1`, so their configs cannot be pasted in verbatim. A missing prefix typically surfaces as `UPSTREAM_BAD_RESPONSE`: many gateways answer `POST /messages` with their own HTML homepage at **HTTP 200**, which clears every status check and only fails at `parseJsonOnce`.
 
@@ -158,13 +157,27 @@ Scenarios, privacy topics, and trial challenges carry `reviewStatus: 'draft' | '
 
 Preview URLs, `*.vercel.app`, and custom domains are separate origins with separate `localStorage`. Users must export before switching domains.
 
-**Current deploy status (2026-08-08):** Production release is **BLOCKED** pending: Vercel Preview deployment + WAF/rate-limiting configuration (requires project-owner Vercel login), keyboard manual acceptance, external professional content review (s14–s18 scenarios + 18 AI trial candidates), legal and sexual-health copy review, and Vercel AUP confirmation. All automated checks pass; blockers are operational and content-review items only.
+**Current deploy status (2026-08-10):** Production release is **BLOCKED** pending: Vercel Preview deployment + WAF/rate-limiting configuration (requires project-owner Vercel login), keyboard manual acceptance, external professional content review (s14–s21 scenarios + 18 AI trial candidates), legal and sexual-health copy review, and Vercel AUP confirmation. All automated checks pass; blockers are operational and content-review items only.
 
 ## Conventions
 
 Two-space indent, single quotes, no semicolons, trailing commas in multiline literals. Strict TypeScript — no untyped escape hatches. PascalCase for components and their files, camelCase for functions/variables, UPPER_SNAKE_CASE for module constants. Keep feature code with its feature; keep analysis, safety, validation, and reducer logic pure. Comments and user-facing strings in this repo are Chinese; match that.
 
-Commits follow `type: concise summary` (`feat:`, `docs:`, `chore:`, `license:`).
+Commits follow `type: concise summary`. Common prefixes: `feat:`, `fix:`, `docs:`, `test:`, `chore:`, `merge:`, `license:`.
+
+## Repo infrastructure notes
+
+**Vitest config lives inside `vite.config.ts`** (not a separate `vitest.config.ts`): `environment: 'jsdom'`, `setupFiles: ['./tests/setup.ts']`, `include: ['tests/unit/**/*.test.{ts,tsx}']`, `css: false`. The `include` pattern is why `npm test` runs only unit tests and never touches E2E.
+
+**No `.github/` directory.** There are no CI workflows. All gating runs through Vercel's `buildCommand` (`npm run verify:deploy`). PR checks don't exist — the build is the gate.
+
+**`AGENTS.md`** exists at repo root as a higher-level companion to this file. Keep the two reconciled; CLAUDE.md is the authoritative source for architecture and invariants.
+
+**License:** AGPL-3.0 (strong Copyleft). Fonts are SIL OFL 1.1, self-hosted under `public/licenses/` — `verify:deploy` asserts the OFL license file exists.
+
+**`scripts/fix-scenario-paths.mjs`** is a maintenance script for bulk-updating scenario path references; invoke it explicitly when scenario graph structure changes.
+
+**Stale git worktrees** under `.claude/worktrees/` contain full repo checkouts (including built `dist/`) and will double-match every repo-wide grep/glob unless excluded or removed. Check `git worktree list` and prune any that are already merged.
 
 ## Privacy constraints
 

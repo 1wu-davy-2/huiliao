@@ -243,11 +243,58 @@ describe('场景数据', () => {
     }
   })
 
+  it('s19：误导期望、取消保护或逼单均为 risky', () => {
+    const s19 = SCENARIOS_DRAFT.find((s) => s.id === 's19')!
+    expect(s19).toBeDefined()
+    const pressure = /口是心非|好好追你|偶尔不用|自己留着|今晚就来我家|吊我玩/
+    for (const node of s19.nodes) {
+      for (const c of node.choices) {
+        if (pressure.test(c.text)) {
+          expect(c.quality, `${node.id}/${c.id}`).toBe('risky')
+          const ending = s19.endings.find((e) => e.id === c.goesTo)
+          expect(ending?.tone, `${node.id}/${c.id}`).not.toBe('mutual')
+        }
+      }
+    }
+  })
+
+  it('s20：用「都出来了」或取消保护/影像的选项为 risky', () => {
+    const s20 = SCENARIOS_DRAFT.find((s) => s.id === 's20')!
+    expect(s20).toBeDefined()
+    const bad = /出来不就是为了做|没套也能|白准备|拍一点纪念|吹两句/
+    for (const node of s20.nodes) {
+      for (const c of node.choices) {
+        if (bad.test(c.text)) {
+          expect(c.quality, `${node.id}/${c.id}`).toBe('risky')
+        }
+      }
+    }
+  })
+
+  it('s21：对方犹豫或喊停后 good 不得继续推销上床', () => {
+    const s21 = SCENARIOS_DRAFT.find((s) => s.id === 's21')!
+    expect(s21).toBeDefined()
+    const hesitate = s21.nodes.filter((n) =>
+      /犹豫|只接吻|到此为止|不想|回家/.test(n.characterMessage),
+    )
+    expect(hesitate.length).toBeGreaterThan(0)
+    for (const node of hesitate) {
+      for (const c of node.choices) {
+        if (c.quality === 'good') {
+          expect(
+            /必须得吃|再考虑|全套真的|补偿我|试试就知道/.test(c.text),
+            `${node.id}/${c.id}`,
+          ).toBe(false)
+        }
+      }
+    }
+  })
+
   it('draft 场景不在主内容入口中（不进生产 bundle）', () => {
     expect(SCENARIOS.some((s) => s.reviewStatus === 'draft')).toBe(false)
-    expect(SCENARIOS_DRAFT.length).toBeGreaterThanOrEqual(5)
+    expect(SCENARIOS_DRAFT.length).toBeGreaterThanOrEqual(8)
     expect(SCENARIOS_DRAFT.map((s) => s.id).sort()).toEqual(
-      ['s14', 's15', 's16', 's17', 's18'].sort(),
+      ['s14', 's15', 's16', 's17', 's18', 's19', 's20', 's21'].sort(),
     )
     expect(SCENARIOS_DRAFT.every((s) => s.reviewStatus === 'draft')).toBe(true)
     for (const scenario of SCENARIOS_DRAFT) {

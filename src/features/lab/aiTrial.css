@@ -330,3 +330,60 @@
     max-width: 100%;
   }
 }
+
+/* ─── AI Config Modal ─────────────────────── */
+.ai-config-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 10vh;
+  overflow-y: auto;
+}
+.ai-config-modal {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  max-width: 520px;
+  width: 100%;
+  margin: 0 16px 80px;
+  padding: 32px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+.ai-config-modal h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-headline-md, 24px);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.ai-config-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+/* topbar AI config button */
+.ai-config-btn {
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: var(--muted);
+  transition: color var(--transition-fast);
+}
+.ai-config-btn.configured {
+  color: var(--primary);
+}
+.ai-config-btn:hover {
+  color: var(--ink);
+}
+.ai-config-btn.configured:hover {
+  color: var(--primary);
+}
+
+/* status variants */
+.ai-status-warn {
+  color: var(--warning);
+}

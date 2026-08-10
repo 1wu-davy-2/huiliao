@@ -196,9 +196,10 @@ describe('AI 试炼 Schema', () => {
 // ─── 选题逻辑 ──────────────────────────────────────────────────
 
 describe('selectChallenge', () => {
-  it('空审核池返回 undefined', () => {
-    // getPublishedTrials 当前为空
-    const result = selectChallenge('communication', 'simple', [], () => 0.5)
+  it('空审核池返回 undefined（dev 注入题不匹配 promptcraft/normal 时仍为空）', () => {
+    // getPublishedTrials 在 dev 模式下会注入 _DEV_DEMO（communication/simple），
+    // 请求 promptcraft/normal 应因无匹配而返回 undefined
+    const result = selectChallenge('promptcraft', 'normal', [], () => 0.5)
     expect(result).toBeUndefined()
   })
 

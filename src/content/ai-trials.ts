@@ -19,18 +19,18 @@ export const AI_TRIALS_REVIEWED: TrialChallenge[] = []
 const _DEV_DEMO: TrialChallenge = {
   id: 'demo-preview-001',
   reviewStatus: 'reviewed',
-  mode: 'promptcraft',
-  difficulty: 'normal',
+  mode: 'communication',
+  difficulty: 'simple',
   title: '【演示专用】日常寒暄练习',
-  brief: '通过精心设计的提示词，引导模型生成一段自然、有温度的日常问候回应。',
+  brief: '在朋友重新联系的情境中，自然地回应对方的问候，练习尊重的沟通节奏。',
   objective:
-    '编写一段提示词，让模型以朋友的口吻回应久未联系后的问候，不超过 100 字，语气真诚不矫情。',
+    '以朋友的口吻回应久未联系后的问候，不超过 100 字，真诚、不过分热情。',
   initialPrompt:
-    '请设计一段 Prompt，让模型扮演一位久未联系的朋友，回应问候"最近怎么样？感觉你好久没出现了。"',
+    '你现在是一位久未联系的朋友。对方说：「最近怎么样？感觉你好久没出现了。」请回复。',
   acceptanceCriteria: [
-    'Prompt 清晰描述了角色和语气要求',
-    '输出内容不超过 100 字',
-    '语气自然，没有使用攻击性或回避性表达',
+    '回应不超过 100 字',
+    '语气自然真诚，没有攻击性表达',
+    '没有连续追问或施加压力',
   ],
   hardChecks: [
     { type: 'nonEmpty' },

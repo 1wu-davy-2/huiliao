@@ -92,7 +92,7 @@ describe('Vercel 部署配置', () => {
     expect(SCENARIOS.some((s) => s.reviewStatus === 'draft')).toBe(false)
   })
 
-  it('verify-deploy 的草稿标记覆盖全部 draft 标题（s14–s18 与 18 道 AI 题）', () => {
+  it('verify-deploy 的草稿标记覆盖全部 draft 标题（s14–s21 与 18 道 AI 题）', () => {
     const script = readFileSync(join(ROOT, 'scripts', 'verify-deploy.mjs'), 'utf8')
     const block = script.match(/const DRAFT_MARKERS = \[([\s\S]*?)\]/)?.[1] ?? ''
     const markers = [...block.matchAll(/'([^']+)'/g)].map((m) => m[1])
@@ -101,7 +101,7 @@ describe('Vercel 部署配置', () => {
       ...SCENARIOS_DRAFT.map((s) => s.title),
       ...AI_TRIALS_DRAFT.map((t) => t.title),
     ]
-    expect(draftTitles.length).toBeGreaterThanOrEqual(23) // 5 场景 + 18 题
+    expect(draftTitles.length).toBeGreaterThanOrEqual(26) // 8 场景 + 18 题
     for (const title of draftTitles) {
       expect(markers, `verify-deploy 缺少草稿标记: ${title}`).toContain(title)
     }

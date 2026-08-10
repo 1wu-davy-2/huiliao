@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import type { OptionQuality, SkillKey } from '@/types'
 import { contentReviewStatusSchema } from './common'
-import { trialSummarySchema } from './ai-trials'
+import { apiProtocolSchema, trialSummarySchema } from './ai-trials'
 
 // 定义已移入 ./common（叶子模块）以打破 index ⇄ ai-trials 的运行时循环依赖。
 // 此处只做再导出，保持 `@/schemas` 的公开 API 不变。
@@ -158,6 +158,15 @@ export const privacyTopicSchema = z.object({
   reviewStatus: contentReviewStatusSchema,
 })
 
+export const aiConfigSchema = z.object({
+  protocol: apiProtocolSchema,
+  model: z.string().min(1),
+  apiKey: z.string().min(1),
+  targetKind: z.enum(['preset', 'custom']),
+  presetId: z.string().min(1),
+  customUrl: z.string().min(1),
+})
+
 export const storedDataSchema = z.object({
   schemaVersion: z.number().int().positive(),
   settings: settingsSchema,
@@ -165,6 +174,7 @@ export const storedDataSchema = z.object({
   favorites: z.array(z.string()),
   reflections: z.array(reflectionSchema),
   trialSummaries: z.array(trialSummarySchema).optional(),
+  aiConfig: aiConfigSchema.optional(),
 })
 
 export type ParsedScenario = z.infer<typeof scenarioSchema>

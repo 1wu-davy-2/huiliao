@@ -1,16 +1,17 @@
 import type {
+  AiConfig,
   ProgressRecord,
   Reflection,
   StoredData,
   TrialSummary,
   UserSettings,
 } from '@/types'
-import { progressRecordSchema, storedDataSchema, settingsSchema } from '@/schemas'
+import { aiConfigSchema, progressRecordSchema, storedDataSchema, settingsSchema } from '@/schemas'
 import { trialSummarySchema } from '@/schemas/ai-trials'
 import { DEFAULT_SETTINGS } from '@/lib/settings/defaults'
 
 export const STORAGE_NAMESPACE = 'huiliao:v1'
-export const SCHEMA_VERSION = 2
+export const SCHEMA_VERSION = 3
 
 export type StorageRecoveryReason =
   | 'unreadable-data'
@@ -45,6 +46,7 @@ export function createFallbackData(): StoredData {
     favorites: [],
     reflections: [],
     trialSummaries: [],
+    aiConfig: undefined,
   }
 }
 
@@ -91,6 +93,21 @@ export function loadStoredDataWithStatus(storage?: Storage): StoredDataLoadResul
           favorites: Array.isArray(v1.favorites) ? v1.favorites : [],
           reflections: Array.isArray(v1.reflections) ? v1.reflections : [],
           trialSummaries: [],
+          aiConfig: undefined,
+        }
+        return { data: migrated, recovery: null }
+      }
+      if (rawVersion === 2) {
+        // v2→v3 迁移：v2 无 aiConfig 字段，就地补上
+        const v2 = JSON.parse(raw)
+        const migrated: StoredData = {
+          schemaVersion: SCHEMA_VERSION,
+          settings: { ...DEFAULT_SETTINGS, ...v2.settings },
+          progress: Array.isArray(v2.progress) ? v2.progress : [],
+          favorites: Array.isArray(v2.favorites) ? v2.favorites : [],
+          reflections: Array.isArray(v2.reflections) ? v2.reflections : [],
+          trialSummaries: Array.isArray(v2.trialSummaries) ? v2.trialSummaries : [],
+          aiConfig: undefined,
         }
         return { data: migrated, recovery: null }
       }
@@ -208,6 +225,16 @@ export function updateSettings(
 ): StoredData {
   const data = loadWritableData(storage)
   data.settings = settingsSchema.parse({ ...data.settings, ...patch })
+  saveStoredData(data, storage)
+  return data
+}
+
+export function updateAiConfig(
+  config: AiConfig,
+  storage?: Storage,
+): StoredData {
+  const data = loadWritableData(storage)
+  data.aiConfig = aiConfigSchema.parse(config)
   saveStoredData(data, storage)
   return data
 }

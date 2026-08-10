@@ -165,7 +165,7 @@ describe('AI 试炼场页面 · 注入非空题池', () => {
     expect(screen.getByRole('button', { name: '开始试炼' })).toBeDisabled()
   })
 
-  it('切换协议后立即清空 API Key 与同意勾选', async () => {
+  it('切换协议后立即清空同意勾选但保留 API Key（预填值来自已保存配置）', async () => {
     const user = userEvent.setup()
     renderPage()
     await fillCredentials(user)
@@ -175,12 +175,13 @@ describe('AI 试炼场页面 · 注入非空题池', () => {
     await user.selectOptions(screen.getByLabelText('协议'), 'anthropic')
 
     await waitFor(() => {
-      expect(screen.getByLabelText('API Key')).toHaveValue('')
+      expect(consentBox()).not.toBeChecked()
     })
-    expect(consentBox()).not.toBeChecked()
+    // API Key 保留不变：预填值可能来自已保存配置，切换协议不应清空
+    expect(screen.getByLabelText('API Key')).toHaveValue(SENTINEL_KEY)
   })
 
-  it('切换到自定义地址后清空凭据并显示 Base URL 输入', async () => {
+  it('切换到自定义地址后清空同意勾选并显示 Base URL 输入', async () => {
     const user = userEvent.setup()
     renderPage()
     await fillCredentials(user)
@@ -191,7 +192,8 @@ describe('AI 试炼场页面 · 注入非空题池', () => {
     await waitFor(() => {
       expect(screen.getByLabelText('Base URL (HTTPS)')).toBeInTheDocument()
     })
-    expect(screen.getByLabelText('API Key')).toHaveValue('')
+    // API Key 保留不变：预填值可能来自已保存配置
+    expect(screen.getByLabelText('API Key')).toHaveValue(SENTINEL_KEY)
     expect(consentBox()).not.toBeChecked()
   })
 

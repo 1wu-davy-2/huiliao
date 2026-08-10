@@ -1,15 +1,16 @@
+import { useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import {
-  Bell,
+  Cpu,
   Dumbbell,
   Home,
   LogOut,
   Plus,
   Settings,
   TrendingUp,
-  UserCircle,
 } from 'lucide-react'
 import { useAppData } from '@/lib/settings/AppDataContext'
+import AiConfigModal from '@/features/lab/AiConfigModal'
 
 /** 一级导航 4 项，侧栏与底栏共用。`match` 是该入口应高亮的路径前缀集合：
  *  训练中心收纳了 /practice 与 /lab/*，NavLink 的 end 判断无法表达，故自行比对。 */
@@ -91,6 +92,8 @@ export default function AppLayout() {
   const location = useLocation()
   const { data } = useAppData()
   const context = resolveContext(location.pathname)
+  const [showAiConfig, setShowAiConfig] = useState(false)
+  const hasAiConfig = !!data.aiConfig?.apiKey
 
   return (
     <div className="app-shell">
@@ -120,14 +123,15 @@ export default function AppLayout() {
         <header className="topbar">
           <span className="topbar-title">会聊</span>
           <span className="topbar-context">/ {context}</span>
-          {/* 装饰性账户区：不可聚焦、无 onClick。本应用无通知与账号体系 */}
-          <span className="topbar-actions" aria-hidden="true">
-            <span className="topbar-glyph">
-              <Bell size={18} />
-            </span>
-            <span className="topbar-glyph">
-              <UserCircle size={20} />
-            </span>
+          <span className="topbar-actions">
+            <button
+              className={`topbar-glyph ai-config-btn${hasAiConfig ? ' configured' : ''}`}
+              onClick={() => setShowAiConfig(true)}
+              aria-label="AI 连接配置"
+              title={hasAiConfig ? 'AI 配置已就绪' : 'AI 连接未配置'}
+            >
+              <Cpu size={18} aria-hidden="true" />
+            </button>
           </span>
         </header>
         <main id="main-content" className="content">
@@ -148,6 +152,7 @@ export default function AppLayout() {
       <span className="visually-hidden">
         当前状态：{data.settings.onboardingCompleted ? '已设置完成' : '尚未完成首次设置'}
       </span>
+      {showAiConfig && <AiConfigModal onClose={() => setShowAiConfig(false)} />}
     </div>
   )
 }

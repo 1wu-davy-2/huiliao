@@ -24,20 +24,34 @@ function generateId(): string {
   return `trial-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 }
 
+/** Base URL 智能补全：仅当用户未提供路径时追加协议默认前缀。 */
+function normalizeBaseUrl(raw: string, protocol: ApiProtocol): string {
+  try {
+    const url = new URL(raw.trim())
+    if (url.pathname === '' || url.pathname === '/') {
+      url.pathname = protocol === 'gemini' ? '/v1beta' : '/v1'
+    }
+    return url.toString().replace(/\/$/, '')
+  } catch {
+    return raw
+  }
+}
+
 export default function AiTrialPage() {
-  const { saveTrialSummary, removeTrialSummary, reconcileSummaries } = useAppData()
+  const { data, saveTrialSummary, removeTrialSummary, reconcileSummaries } = useAppData()
+  const savedConfig = data.aiConfig
   const [view, setView] = useState<ViewPage>('setup')
   const [state, dispatch] = useReducer(trialReducer, null, createInitialState)
 
-  // Setup
+  // Setup —— 优先从已保存的配置预填
   const [mode, setMode] = useState<TrialMode>('communication')
   const [difficulty, setDifficulty] = useState<TrialDifficulty>('simple')
-  const [protocol, setProtocol] = useState<ApiProtocol>('openai-compatible')
-  const [targetKind, setTargetKind] = useState<'preset' | 'custom'>('preset')
-  const [presetId, setPresetId] = useState('openai')
-  const [customUrl, setCustomUrl] = useState('')
-  const [model, setModel] = useState('')
-  const [apiKey, setApiKey] = useState('')
+  const [protocol, setProtocol] = useState<ApiProtocol>(savedConfig?.protocol ?? 'openai-compatible')
+  const [targetKind, setTargetKind] = useState<'preset' | 'custom'>(savedConfig?.targetKind ?? 'preset')
+  const [presetId, setPresetId] = useState(savedConfig?.presetId ?? 'openai')
+  const [customUrl, setCustomUrl] = useState(savedConfig?.customUrl ?? '')
+  const [model, setModel] = useState(savedConfig?.model ?? '')
+  const [apiKey, setApiKey] = useState(savedConfig?.apiKey ?? '')
   const [roundLimit, setRoundLimit] = useState(10)
   const [consent, setConsent] = useState(false)
   const [challenge, setChallenge] = useState<TrialChallenge | undefined>()
@@ -52,15 +66,22 @@ export default function AiTrialPage() {
   // 当前进行中请求的取消控制器；取消只清除挂起状态，不消耗轮数
   const abortRef = useRef<AbortController | null>(null)
 
-  // 清空 API key 当协议或目标变化
-  const clearKey = useCallback(() => {
-    setApiKey('')
-    setConsent(false)
-  }, [])
-
+  // 当已保存配置变更时（如从弹窗保存后），同步到页面状态预填
   useEffect(() => {
-    clearKey()
-  }, [protocol, targetKind, presetId, customUrl, clearKey])
+    if (savedConfig) {
+      setProtocol(savedConfig.protocol)
+      setTargetKind(savedConfig.targetKind)
+      setPresetId(savedConfig.presetId)
+      setCustomUrl(savedConfig.customUrl)
+      setModel(savedConfig.model)
+      setApiKey(savedConfig.apiKey)
+    }
+  }, [savedConfig])
+
+  // 协议或目标变化时仅清空同意勾选（不再清空已保存的配置预填值）
+  useEffect(() => {
+    setConsent(false)
+  }, [protocol, targetKind, presetId, customUrl])
 
   // 清空 key 并中止进行中的请求 on unmount
   useEffect(() => {
@@ -97,7 +118,7 @@ export default function AiTrialPage() {
     setConnStatus('连接中...')
     const target = targetKind === 'preset'
       ? { kind: 'preset' as const, presetId }
-      : { kind: 'custom' as const, baseUrl: customUrl }
+      : { kind: 'custom' as const, baseUrl: normalizeBaseUrl(customUrl, protocol) }
     const result = await testConnection(apiKey, {
       mode,
       difficulty,
@@ -130,7 +151,7 @@ export default function AiTrialPage() {
 
     const target = targetKind === 'preset'
       ? { kind: 'preset' as const, presetId }
-      : { kind: 'custom' as const, baseUrl: customUrl }
+      : { kind: 'custom' as const, baseUrl: normalizeBaseUrl(customUrl, protocol) }
 
     const controller = new AbortController()
     abortRef.current = controller
@@ -202,7 +223,7 @@ export default function AiTrialPage() {
       // 调用模型自评
       const target = targetKind === 'preset'
         ? { kind: 'preset' as const, presetId }
-        : { kind: 'custom' as const, baseUrl: customUrl }
+        : { kind: 'custom' as const, baseUrl: normalizeBaseUrl(customUrl, protocol) }
 
       let envelope: EvaluationResponse | null = null
       try {
@@ -409,8 +430,8 @@ export default function AiTrialPage() {
           ) : (
             <div className="ai-field-group">
               <label className="ai-label" htmlFor="ai-base-url">Base URL (HTTPS)</label>
-              <input id="ai-base-url" className="ai-input" type="url" placeholder="https://your-proxy.example.com/v1" value={customUrl} onChange={(e) => setCustomUrl(e.target.value)} />
-              <p className="ai-hint">需要填完整路径前缀（通常是 /v1，Gemini 是 /v1beta）。接口路径由服务端追加，不会覆盖你填的前缀。cc-switch 等工具会自动补 /v1，它们的配置不能原样粘贴过来。</p>
+              <input id="ai-base-url" className="ai-input" type="url" placeholder="https://your-proxy.example.com" value={customUrl} onChange={(e) => setCustomUrl(e.target.value)} />
+              <p className="ai-hint">输入主机地址即可，系统自动补全路径前缀（OpenAI-compatible / Anthropic → <code>/v1</code>，Gemini → <code>/v1beta</code>）。如需自定义路径，直接写入完整地址。</p>
             </div>
           )}
 

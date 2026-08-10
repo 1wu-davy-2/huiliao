@@ -270,9 +270,19 @@ export interface StoredData {
   favorites: string[]
   reflections: Reflection[]
   trialSummaries?: TrialSummary[]
+  aiConfig?: AiConfig
 }
 
 // ─── AI 试炼场 ───────────────────────────────────────────────
+
+export interface AiConfig {
+  protocol: ApiProtocol
+  model: string
+  apiKey: string
+  targetKind: 'preset' | 'custom'
+  presetId: string
+  customUrl: string
+}
 
 export type TrialMode = 'communication' | 'promptcraft'
 

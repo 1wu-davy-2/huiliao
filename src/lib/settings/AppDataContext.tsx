@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import type { ProgressRecord, Reflection, StoredData, TrialSummary, UserSettings } from '@/types'
+import type { AiConfig, ProgressRecord, Reflection, StoredData, TrialSummary, UserSettings } from '@/types'
 import {
   addProgressRecord,
   addReflection,
@@ -14,6 +14,7 @@ import {
   STORAGE_NAMESPACE,
   StorageRecoveryRequiredError,
   toggleFavorite as persistFavorite,
+  updateAiConfig,
   updateSettings,
   type StorageRecovery,
 } from '@/lib/storage/storage'
@@ -22,6 +23,7 @@ import { clearTrialSessions } from '@/lib/ai/trialDb'
 interface AppDataContextValue {
   data: StoredData
   updateSettings: (patch: Partial<UserSettings>) => boolean
+  saveAiConfig: (config: AiConfig) => boolean
   completeScenario: (record: ProgressRecord) => boolean
   saveReflection: (reflection: Reflection) => boolean
   deleteReflection: (id: string) => boolean
@@ -90,6 +92,11 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
   const handleUpdateSettings = useCallback(
     (patch: Partial<UserSettings>) => runMutation(() => updateSettings(patch)),
+    [runMutation],
+  )
+
+  const handleSaveAiConfig = useCallback(
+    (config: AiConfig) => runMutation(() => updateAiConfig(config)),
     [runMutation],
   )
 
@@ -207,6 +214,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     () => ({
       data,
       updateSettings: handleUpdateSettings,
+      saveAiConfig: handleSaveAiConfig,
       completeScenario: handleCompleteScenario,
       saveReflection: handleSaveReflection,
       deleteReflection: handleDeleteReflection,
@@ -225,6 +233,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     [
       data,
       handleUpdateSettings,
+      handleSaveAiConfig,
       handleCompleteScenario,
       handleSaveReflection,
       handleDeleteReflection,
