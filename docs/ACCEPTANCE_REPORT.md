@@ -73,7 +73,7 @@
 | SPA 深层路由 | PASS | catch-all rewrite 到 `/index.html` |
 | 安全响应头 | PASS | CSP（`script-src 'self'`、`connect-src 'self'`、`font-src 'self'`）、nosniff、DENY、no-referrer、Permissions-Policy |
 | 静态资源缓存 | PASS | 哈希 assets 一年 immutable |
-| api/ai functions | PASS | `nodejs22.x`、`maxDuration: 30`；保留 SPA rewrite |
+| api/ai functions | PASS | `maxDuration: 30`；不写 `runtime`（Node 版本由 `engines.node` 决定，写 `nodejs22.x` 会导致 Vercel 配置校验失败）；保留 SPA rewrite |
 | 草稿扫描 | PASS | DRAFT_MARKERS 扩展至 23 个 + 守卫测试（新增草稿必须登记） |
 | Preview 部署 | NOT RUN | 无 CLI/登录态，需项目所有者操作 |
 | WAF / 速率限制 | BLOCKED | Vercel 控制台配置项，需部署后由项目所有者配置并实测（模块头已注明 `/api/ai/*` 生产前置要求） |

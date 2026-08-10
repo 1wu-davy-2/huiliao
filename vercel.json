@@ -7,7 +7,6 @@
   "trailingSlash": false,
   "functions": {
     "api/ai/**/*.ts": {
-      "runtime": "nodejs22.x",
       "maxDuration": 30
     }
   },

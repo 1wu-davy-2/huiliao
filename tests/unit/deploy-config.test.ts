@@ -142,7 +142,11 @@ describe('Vercel 部署配置', () => {
     expect(config.functions).toBeDefined()
     const fnKey = Object.keys(config.functions!).find((k) => k.startsWith('api/ai/'))
     expect(fnKey).toBeDefined()
-    expect(config.functions![fnKey!].runtime).toContain('nodejs')
+    expect(config.functions![fnKey!].maxDuration).toBe(30)
+    // runtime 字段只用于社区运行时（形如 vercel-php@0.7.3）。
+    // Node 函数写 'nodejs22.x' 会导致 Vercel 配置校验失败、构建根本不启动，
+    // Node 版本改由 package.json 的 engines.node 与项目设置决定。
+    expect(config.functions![fnKey!].runtime).toBeUndefined()
     // CSP 不包含外部 connect-src
     const pageHeaders = config.headers?.find((h) => h.source === '/(.*)')?.headers ?? []
     const csp = pageHeaders.find((h) => h.key === 'Content-Security-Policy')?.value ?? ''
