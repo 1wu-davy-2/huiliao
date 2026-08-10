@@ -11,7 +11,7 @@
 [![React 18](https://img.shields.io/badge/React-18-217a70)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Strict-165e57)](https://www.typescriptlang.org)
 [![Vite 5](https://img.shields.io/badge/Vite-5-747bff)](https://vitejs.dev)
-[![Vitest](https://img.shields.io/badge/Vitest-541%20tests-2f7d4d)](https://vitest.dev)
+[![Vitest](https://img.shields.io/badge/Vitest-607%20tests-2f7d4d)](https://vitest.dev)
 [![Local-First](https://img.shields.io/badge/Data-Local%20First-b78324)]()
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-red)](LICENSE)
 
@@ -105,7 +105,7 @@ Vercel（静态资源 + 同源中转函数）
 
 **除 AI 试炼场外，训练内容不上传任何服务器。** 消息实验室草稿、情境模拟自由输入与复盘全部在浏览器本地处理；应用没有账号、云同步或服务器端对话存储。
 
-**AI 试炼场是唯一例外。** 勾选同意后，你的输入与模型回复会经本站同源中转函数（`/api/ai/*`）发往你自己配置的模型服务。API Key 只存在于页面内存与该次请求中，不写入任何存储，也不进入导出文件（详见[隐私承诺](#隐私承诺)）。
+**AI 试炼场是唯一例外。** 勾选同意后，你的输入与模型回复会经本站同源中转函数（`/api/ai/*`）发往你自己配置的模型服务。API Key 保存在本浏览器的 `localStorage`，以免每次重填；导出 JSON 时会被剔除（详见[隐私承诺](#隐私承诺)）。
 
 ---
 
@@ -141,9 +141,9 @@ Vercel（静态资源 + 同源中转函数）
 ## 隐私承诺
 
 - **训练内容数据**：消息实验室草稿、模拟对话自由输入、复盘不上传任何服务器。**AI 试炼场例外**：勾选同意后，输入与模型回复经同源中转函数发往你配置的模型服务；结束后的模型自评会额外调用一次，消耗你的 Token 或余额。
-- **API Key**：只存在于页面内存与该次请求的专用请求头中，不写入 localStorage、IndexedDB、URL、日志或导出文件。切换协议或目标主机会立即清空已填密钥与同意勾选。请使用可随时撤销的最小权限密钥——浏览器扩展、开发者工具与中转运行环境仍可能观察到它。
+- **API Key**：保存在当前站点的 `localStorage`（键 `huiliao:v1`），以免每次使用都要重填；经该次请求的专用请求头发往你填写的模型服务，不写入 IndexedDB、URL 或日志，**导出 JSON 时会被剔除**。请使用可随时撤销的最小权限密钥——浏览器扩展、开发者工具、同一浏览器配置的其他使用者与中转运行环境都可能观察到它。不希望留存时，在设置页清除本地数据即可一并删除。
 - **试炼对话**：完整对话只保存在当前浏览器的 IndexedDB（最近 20 次或 25 MB，达上限自动清理最旧记录），不进入应用导出 JSON；支持按次导出、按次删除与一键清空。
-- **本地数据**：设置、进度、收藏、复盘仅保存在当前域名浏览器的 `localStorage`（`huiliao:v1`），按域名隔离；草稿与自由输入不持久化。
+- **本地数据**：设置、进度、收藏、复盘与 AI 连接配置仅保存在当前域名浏览器的 `localStorage`（`huiliao:v1`），按域名隔离；草稿与自由输入不持久化。
 - **基础设施请求数据**：托管平台（Vercel）为提供静态文件会处理基础请求元数据（IP、User-Agent、请求路径等），按其[隐私政策](https://vercel.com/legal/privacy-notice)处理；项目默认不开启 Web Analytics 与 Speed Insights。
 - **数据控制**：支持导出结构化 JSON 与一键清除；本地数据无法解析时先提供原始备份下载，不静默覆盖。
 - 完整披露见应用内 `/privacy` 页面与 [docs/项目部署架构修改确认计划.md](./docs/项目部署架构修改确认计划.md)。
@@ -157,7 +157,7 @@ Vercel（静态资源 + 同源中转函数）
 | 前端 | React 18 · TypeScript（严格模式）· Vite 5 · React Router 6 |
 | 数据契约 | Zod（场景图、隐私主题、存储 schema 运行时校验） |
 | 样式 | 原生 CSS + 设计令牌（米白/深墨/鼠尾草绿/砖红/金）· 自托管 OFL 字体（Hanken Grotesk / Be Vietnam Pro / Work Sans） |
-| 测试 | Vitest + React Testing Library（541 用例）· Playwright（31 通过 / 8 因空题池发布门预期跳过，2026-08-08 实测） |
+| 测试 | Vitest + React Testing Library（607 用例）· Playwright（31 通过 / 8 因空题池发布门预期跳过，2026-08-08 实测） |
 | 部署 | Vercel 纯静态 · Node 22 · `verify:deploy` 构建链 |
 
 ### 本地开发
@@ -165,7 +165,7 @@ Vercel（静态资源 + 同源中转函数）
 ```bash
 npm ci
 npm run dev          # http://localhost:5173
-npm run verify:deploy  # lint + 159 测试 + 构建 + 产物校验（部署前全量）
+npm run verify:deploy  # lint + 607 测试 + 构建 + 产物校验（部署前全量）
 ```
 
 ### Vercel 部署

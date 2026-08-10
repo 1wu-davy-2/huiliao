@@ -247,10 +247,31 @@ describe('updateAiConfig', () => {
     ).not.toThrow()
   })
 
-  // 已知缺口，非期望行为：导出含明文 apiKey。
-  // 此断言锁定现状，若将来加入脱敏，应连同 README / privacy 文案一起改。
-  it('导出目前包含明文 apiKey（已知隐私缺口）', () => {
+  // 导出文件脱离应用控制（可能被同步、备份或被同设备其他人读到），
+  // 因此 apiKey 必须剔除。以下三条共同锁定脱敏行为，不要放宽任何一条。
+  it('导出剔除 apiKey', () => {
     updateAiConfig(PRESET_CONFIG)
-    expect(exportStoredData()).toContain('sk-test-preset')
+    const dump = exportStoredData()
+    expect(dump).not.toContain('sk-test-preset')
+    // 省略键而非置空串：空串过不了 aiConfigSchema 的 apiKey.min(1)
+    expect(JSON.parse(dump).data.aiConfig).not.toHaveProperty('apiKey')
+  })
+
+  it('导出保留除 apiKey 外的连接配置，便于恢复后只重填密钥', () => {
+    updateAiConfig({ ...PRESET_CONFIG, targetKind: 'custom', customUrl: 'https://proxy.example.com/v1' })
+    const config = JSON.parse(exportStoredData()).data.aiConfig
+    expect(config).toMatchObject({
+      protocol: 'openai-compatible',
+      model: 'gpt-4o-mini',
+      targetKind: 'custom',
+      presetId: 'openai',
+      customUrl: 'https://proxy.example.com/v1',
+    })
+  })
+
+  it('脱敏只作用于导出，localStorage 中的 apiKey 不受影响', () => {
+    updateAiConfig(PRESET_CONFIG)
+    exportStoredData()
+    expect(loadStoredDataWithStatus().data.aiConfig?.apiKey).toBe('sk-test-preset')
   })
 })

@@ -289,13 +289,30 @@ export function toggleFavorite(
   return data
 }
 
+/**
+ * 导出为可下载 JSON。
+ *
+ * aiConfig.apiKey 一律剔除：导出文件脱离应用控制，可能被同步、备份或被同设备
+ * 其他人读到，明文密钥落在里面的风险远大于「导出后能一键还原」的便利。
+ * 其余连接配置（协议、模型、目标）保留，恢复时只需重填密钥。
+ *
+ * 注意这是「省略键」而非「置空」：置空串无法通过 aiConfigSchema 的
+ * apiKey.min(1)，未来若加入导入功能会在校验处直接失败。
+ */
 export function exportStoredData(storage?: Storage): string {
   const data = loadWritableData(storage)
+  const exportable: StoredData = { ...data }
+  if (exportable.aiConfig) {
+    const { protocol, model, targetKind, presetId, customUrl } = exportable.aiConfig
+    // 显式列出保留字段，apiKey 因此不可能被顺带带出；
+    // 新增配置字段时需在此处同步，漏加只会少导出，不会泄漏密钥。
+    exportable.aiConfig = { protocol, model, targetKind, presetId, customUrl } as StoredData['aiConfig']
+  }
   return JSON.stringify(
     {
       schemaVersion: SCHEMA_VERSION,
       exportedAt: new Date().toISOString(),
-      data,
+      data: exportable,
     },
     null,
     2,
